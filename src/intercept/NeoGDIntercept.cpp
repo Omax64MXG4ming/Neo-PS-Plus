@@ -148,6 +148,17 @@ uint64_t NeoGDIntercept::requestStarted(
     const std::map<std::string, std::string>& headers,
     const std::string& body
 ) {
+
+if (!neo::config::isInterceptEnabled()) {
+        return;
+    }
+
+    if (!neo::config::interceptAllServers()) {
+        if (url.find("neops.x10.mx") == std::string::npos) {
+            return;
+        }
+    }
+  
     NeoRequest request;
 
     request.source = RequestSource::GeometryDash;
