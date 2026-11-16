@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <cstdint>
+#include "../config/NeoConfig.hpp"
 
 namespace neo::intercept {
 
