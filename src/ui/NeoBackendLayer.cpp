@@ -711,67 +711,64 @@ void NeoBackendLayer::refreshList() {
             << " | "
             << shorten(request.url, 24);
 
-        auto item = CCMenuItemFont::create(
-            row.str().c_str(),
-            this,
-            menu_selector(NeoBackendLayer::onSelectRequest)
-        );
 
-        if (!item) {
-            continue;
-        }
+auto item = CCMenuItemFont::create(
+    row.str().c_str(),
+    this,
+    menu_selector(NeoBackendLayer::onSelectRequest)
+);
 
-        item->setTag(displayed);
-        item->setAnchorPoint(ccp(0, 0.5f));
+if (!item) {
+    continue;
+}
 
-        // Maximum row width.
+item->setTag(displayed);
+item->setAnchorPoint(ccp(0, 0.5f));
 
-        const float availableRowWidth =
-            listWidth - 15.0f * s;
+// Keep the original text visible and fit it to the row.
+item->setColor(ccc3(255, 255, 255));
 
-        const float baseRowScale =
-            0.55f * s;
+const float availableRowWidth =
+    listWidth - 15.0f * s;
 
-        float rowScale = baseRowScale;
+const float baseRowScale =
+    0.55f * s;
 
-        const float naturalWidth =
-            item->getContentSize().width;
+const float naturalWidth =
+    item->getContentSize().width;
 
-        if (naturalWidth * rowScale > availableRowWidth) {
-            rowScale = availableRowWidth / naturalWidth;
-        }
+float rowScale = baseRowScale;
 
-        item->setScale(rowScale);
+if (naturalWidth > 0.0f &&
+    naturalWidth * rowScale > availableRowWidth) {
+    rowScale = availableRowWidth / naturalWidth;
+}
 
-        auto menu = CCMenu::create(
-            item,
-            nullptr
-        );
+item->setScale(rowScale);
 
-        if (!menu) {
-            continue;
-        }
+auto menu = CCMenu::create(
+    item,
+    nullptr
+);
 
-        menu->setPosition(
-            ccp(
-                15.0f * s,
-                y
-            )
-        );
+if (!menu) {
+    continue;
+}
 
-        m_listContainer->addChild(menu);
+menu->setPosition(
+    ccp(
+        15.0f * s,
+        y
+    )
+);
 
-// Configure its touch priority on the next update.
-// This avoids modifying an unregistered handler.
+m_listContainer->addChild(menu);
+
+// Queue priority configuration for the next update.
 m_pendingMenus.push_back(menu);
 
-        // Dynamic menu: it is added while the
-        // Inspector is already running.
-        
-
-        y -= 29.0f * s;
-
-        displayed++;
+y -= 29.0f * s;
+displayed++;
     }
 
     // ======================================
