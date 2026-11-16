@@ -347,7 +347,6 @@ void NeoBackendLayer::ccTouchCancelled(
     CCEvent* event
 ) {}
 
-
 // ==========================================
 // FILTER BUTTONS
 // ==========================================
