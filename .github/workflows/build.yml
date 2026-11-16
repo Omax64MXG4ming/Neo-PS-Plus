@@ -1,4 +1,4 @@
-name: Build AnGeodeMod Multi-Platform
+name: Build Neo PS Plus Multi-Platform
 
 on:
   workflow_dispatch:
@@ -103,7 +103,7 @@ jobs:
       - name: Upload Combined Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AnGeodeMod-MultiPlatform
+          name: NeoPS-Plus-MultiPlatform
           path: ${{ steps.combine.outputs.build-output }}/*.geode
           if-no-files-found: error
           retention-days: 14
