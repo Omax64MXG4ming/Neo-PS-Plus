@@ -5,7 +5,6 @@
 
 #include "connection/NeoConnectionFix.hpp"
 #include "backend/NeoBackend.hpp"
-#include "intercept/NeoGDIntercept.hpp"
 #include "ui/NeoBackendLayer.hpp"
 
 using namespace geode::prelude;
