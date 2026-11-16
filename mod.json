@@ -60,5 +60,23 @@
             "name": "Reload Textures Keybind",
             "default": "Ctrl+Shift+T"
         }
+        "backend-url": {
+            "name": "Backend URL",
+            "description": "Backend server URL",
+            "type": "string",
+            "default": "https://neops.x10.mx/database"
+        },
+        "intercept-enabled": {
+            "name": "Enable Intercept",
+            "description": "Capture Cocos requests",
+            "type": "bool",
+            "default": true
+        },
+        "intercept-all-servers": {
+            "name": "Intercept All Servers",
+            "description": "Capture requests regardless of server",
+            "type": "bool",
+            "default": true
+        }
     }
 }
