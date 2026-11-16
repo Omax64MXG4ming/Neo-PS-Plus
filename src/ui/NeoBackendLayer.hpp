@@ -34,8 +34,9 @@ protected:
 
     bool init() override;
     void update(float dt) override;
+    void onEnter() override;
+    std::vector<cocos2d::CCMenu*> m_internalMenus;
     void onExit() override;
-
 void registerWithTouchDispatcher() override;
 
 bool ccTouchBegan(
