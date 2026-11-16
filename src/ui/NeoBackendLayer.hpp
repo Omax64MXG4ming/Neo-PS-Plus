@@ -36,6 +36,28 @@ protected:
     void update(float dt) override;
     void onExit() override;
 
+void registerWithTouchDispatcher() override;
+
+bool ccTouchBegan(
+    cocos2d::CCTouch* touch,
+    cocos2d::CCEvent* event
+) override;
+
+void ccTouchMoved(
+    cocos2d::CCTouch* touch,
+    cocos2d::CCEvent* event
+) override;
+
+void ccTouchEnded(
+    cocos2d::CCTouch* touch,
+    cocos2d::CCEvent* event
+) override;
+
+void ccTouchCancelled(
+    cocos2d::CCTouch* touch,
+    cocos2d::CCEvent* event
+) override;
+
     void refreshList();
     void refreshDetails();
 
