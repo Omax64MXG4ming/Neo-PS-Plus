@@ -7,6 +7,7 @@
 #include <string>
 #include <map>
 #include <functional>
+#include "../config/NeoConfig.hpp"
 
 namespace neo::backend {
 
@@ -56,7 +57,7 @@ namespace neo::backend {
         ) const;
 
         std::string m_baseURL =
-            neo::config::getBackendURL()
+            neo::config::getBackendURL();
 
     };
 
