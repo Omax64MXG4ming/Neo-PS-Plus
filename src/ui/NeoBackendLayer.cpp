@@ -542,9 +542,10 @@ bool NeoBackendLayer::init() {
 void NeoBackendLayer::onEnter() {
     CCLayer::onEnter();
 
-    // Register modal touch delegate.
-    // Internal menus will receive priority -130.
-    // The modal itself uses priority -129.
+    // Modal delegate:
+    // Internal menus: -130
+    // Modal layer:    -129
+    // Game menus:     -128
 
     CCDirector::sharedDirector()
         ->getTouchDispatcher()
@@ -553,23 +554,6 @@ void NeoBackendLayer::onEnter() {
             -129,
             true
         );
-}
-
-// ==========================================
-// ENTER TRANSITION FINISHED
-// ==========================================
-
-void NeoBackendLayer::onEnterTransitionDidFinish() {
-    CCLayer::onEnterTransitionDidFinish();
-
-    // At this point, the internal menus
-    // should already have registered their handlers.
-
-    for (auto menu : m_internalMenus) {
-        if (menu) {
-            menu->setHandlerPriority(-130);
-        }
-    }
 }
 
 // ==========================================
@@ -606,11 +590,39 @@ void NeoBackendLayer::ccTouchCancelled(
 void NeoBackendLayer::update(float dt) {
     CCLayer::update(dt);
 
+    // Configure static menus only after they have
+    // entered the scene and registered their handlers.
+
+    if (!m_touchPrioritiesConfigured) {
+        for (auto menu : m_internalMenus) {
+            if (menu) {
+                menu->setHandlerPriority(-130);
+            }
+        }
+
+        m_touchPrioritiesConfigured = true;
+    }
+
+    // Dynamic menus are configured one update after
+    // being added to the running scene.
+
+    if (!m_pendingMenus.empty()) {
+        for (auto menu : m_pendingMenus) {
+            if (menu) {
+                menu->setHandlerPriority(-130);
+            }
+        }
+
+        m_pendingMenus.clear();
+m_listContainer->removeAllChildrenWithCleanup(true);
+    }
+
     if (m_dirtySignal && m_dirtySignal->exchange(false)) {
         refreshList();
         refreshDetails();
     }
 }
+
 
 // ==========================================
 // REFRESH REQUEST LIST
@@ -749,9 +761,13 @@ void NeoBackendLayer::refreshList() {
 
         m_listContainer->addChild(menu);
 
+// Configure its touch priority on the next update.
+// This avoids modifying an unregistered handler.
+m_pendingMenus.push_back(menu);
+
         // Dynamic menu: it is added while the
         // Inspector is already running.
-        menu->setHandlerPriority(-130);
+        
 
         y -= 29.0f * s;
 
@@ -1075,10 +1091,7 @@ void NeoBackendLayer::onClose(CCObject*) {
 // ==========================================
 // CLEANUP
 // ==========================================
-
 void NeoBackendLayer::onExit() {
-    // Remove our manually registered touch delegate.
-
     CCDirector::sharedDirector()
         ->getTouchDispatcher()
         ->removeDelegate(this);
