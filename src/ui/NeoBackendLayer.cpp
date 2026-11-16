@@ -193,6 +193,8 @@ bool NeoBackendLayer::init() {
         return false;
     }
 
+setTouchEnabled(true);
+
     auto winSize =
         CCDirector::sharedDirector()->getWinSize();
 
@@ -298,10 +300,12 @@ m_panel->setPosition(
 
     closeItem->setScale(1.2f * s);
 
-    auto closeMenu = CCMenu::create(
-        closeItem,
-        nullptr
-    );
+auto closeMenu = CCMenu::create(
+    closeItem,
+    nullptr
+);
+
+closeMenu->setHandlerPriority(-130);
 
     closeMenu->setPosition(
         ccp(W - 28.0f * s, H - 28.0f * s)
@@ -309,43 +313,6 @@ m_panel->setPosition(
 
     m_panel->addChild(closeMenu);
 
-
-// ==========================================
-// MODAL TOUCH BLOCKING
-// ==========================================
-
-void NeoBackendLayer::registerWithTouchDispatcher() {
-    CCDirector::sharedDirector()
-        ->getTouchDispatcher()
-        ->addTargetedDelegate(
-            this,
-            -500,
-            true
-        );
-}
-
-bool NeoBackendLayer::ccTouchBegan(
-    CCTouch* touch,
-    CCEvent* event
-) {
-    // Capturar todos los toques dentro del Inspector.
-    return true;
-}
-
-void NeoBackendLayer::ccTouchMoved(
-    CCTouch* touch,
-    CCEvent* event
-) {}
-
-void NeoBackendLayer::ccTouchEnded(
-    CCTouch* touch,
-    CCEvent* event
-) {}
-
-void NeoBackendLayer::ccTouchCancelled(
-    CCTouch* touch,
-    CCEvent* event
-) {}
 
 // ==========================================
 // FILTER BUTTONS
@@ -393,7 +360,7 @@ layoutMenuItems(
     0.65f * s,
     15.0f * s
 );
-
+filterMenu->setHandlerPriority(-130);
 m_panel->addChild(filterMenu);
 
     // Column separator.
@@ -457,7 +424,7 @@ layoutMenuItems(
     0.60f * s,
     10.0f * s
 );
-
+tabMenu->setHandlerPriority(-130);
 m_panel->addChild(tabMenu);
 
     // Details label with automatic line wrapping.
@@ -655,6 +622,7 @@ auto menu = CCMenu::create(
     nullptr
 );
 
+menu->setHandlerPriority(-130);
 menu->setPosition(
     ccp(
         15.0f * s,
@@ -986,3 +954,39 @@ void NeoBackendLayer::onExit() {
 }
 
 NeoBackendLayer::~NeoBackendLayer() = default;
+
+// ==========================================
+// MODAL TOUCH BLOCKING
+// ==========================================
+
+void NeoBackendLayer::registerWithTouchDispatcher() {
+    CCDirector::sharedDirector()
+        ->getTouchDispatcher()
+        ->addTargetedDelegate(
+            this,
+            -129,
+            true
+        );
+}
+
+bool NeoBackendLayer::ccTouchBegan(
+    CCTouch* touch,
+    CCEvent* event
+) {
+    return true;
+}
+
+void NeoBackendLayer::ccTouchMoved(
+    CCTouch* touch,
+    CCEvent* event
+) {}
+
+void NeoBackendLayer::ccTouchEnded(
+    CCTouch* touch,
+    CCEvent* event
+) {}
+
+void NeoBackendLayer::ccTouchCancelled(
+    CCTouch* touch,
+    CCEvent* event
+) {}
