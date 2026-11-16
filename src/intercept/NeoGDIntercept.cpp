@@ -1,5 +1,6 @@
 #include "NeoGDIntercept.hpp"
 #include "../activity/NeoActivityManager.hpp"
+#include "../config/NeoConfig.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -27,6 +28,35 @@ bool isSensitiveKey(std::string key) {
            key.find("cookie") != std::string::npos ||
            key.find("authorization") != std::string::npos ||
            key.find("session") != std::string::npos;
+}
+
+std::string getHost(const std::string& url) {
+    const size_t scheme = url.find("://");
+
+    if (scheme == std::string::npos)
+        return {};
+
+    const size_t hostStart = scheme + 3;
+    size_t hostEnd = url.find_first_of("/:?#", hostStart);
+
+    if (hostEnd == std::string::npos)
+        hostEnd = url.size();
+
+    std::string host = url.substr(
+        hostStart,
+        hostEnd - hostStart
+    );
+
+    std::transform(
+        host.begin(),
+        host.end(),
+        host.begin(),
+        [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
+        }
+    );
+
+    return host;
 }
 
 std::string sanitizeFormBody(const std::string& body) {
@@ -69,9 +99,8 @@ std::string sanitizeFormBody(const std::string& body) {
 std::string sanitizeURL(const std::string& url) {
     const size_t queryStart = url.find('?');
 
-    if (queryStart == std::string::npos) {
+    if (queryStart == std::string::npos)
         return url;
-    }
 
     std::string result = url.substr(0, queryStart);
     std::string query = url.substr(queryStart + 1);
@@ -83,9 +112,8 @@ std::string sanitizeURL(const std::string& url) {
     while (start < query.size()) {
         size_t end = query.find('&', start);
 
-        if (end == std::string::npos) {
+        if (end == std::string::npos)
             end = query.size();
-        }
 
         std::string parameter = query.substr(
             start,
@@ -97,22 +125,21 @@ std::string sanitizeURL(const std::string& url) {
         if (separator != std::string::npos) {
             std::string key = parameter.substr(0, separator);
 
-            if (isSensitiveKey(key)) {
+            if (isSensitiveKey(key))
                 parameter = key + "=[REDACTED]";
-            }
         }
 
         result += parameter;
 
-        if (end < query.size()) {
+        if (end < query.size())
             result += "&";
-        }
 
         start = end + 1;
     }
 
     return result;
 }
+
 
 std::map<std::string, std::string>
 NeoGDIntercept::sanitizeHeaders(
@@ -128,6 +155,7 @@ NeoGDIntercept::sanitizeHeaders(
     return safeHeaders;
 }
 
+
 std::string NeoGDIntercept::sanitizeBody(
     const std::string& body
 ) {
@@ -142,23 +170,27 @@ std::string NeoGDIntercept::sanitizeBody(
     return sanitizeFormBody(body);
 }
 
+
+// REQUEST STARTED
+
 uint64_t NeoGDIntercept::requestStarted(
     const std::string& method,
     const std::string& url,
     const std::map<std::string, std::string>& headers,
     const std::string& body
 ) {
+    // Intercept desactivado
+    if (!neo::config::isInterceptEnabled())
+        return 0;
 
-if (!neo::config::isInterceptEnabled()) {
-        return;
-    }
-
+    // Filtrar por servidor si no se permiten todos
     if (!neo::config::interceptAllServers()) {
-        if (url.find("neops.x10.mx") == std::string::npos) {
-            return;
-        }
+        const std::string requestHost = getHost(url);
+
+        if (requestHost != "neops.x10.mx")
+            return 0;
     }
-  
+
     NeoRequest request;
 
     request.source = RequestSource::GeometryDash;
@@ -167,14 +199,22 @@ if (!neo::config::isInterceptEnabled()) {
     request.requestHeaders = sanitizeHeaders(headers);
     request.requestBody = sanitizeBody(body);
 
-    return NeoActivityManager::get().begin(std::move(request));
+    return NeoActivityManager::get().begin(
+        std::move(request)
+    );
 }
+
+
+// REQUEST COMPLETED
 
 void NeoGDIntercept::requestCompleted(
     uint64_t requestID,
     int responseCode,
     const std::string& responseBody
 ) {
+    if (requestID == 0)
+        return;
+
     NeoActivityManager::get().complete(
         requestID,
         responseCode,
@@ -182,11 +222,20 @@ void NeoGDIntercept::requestCompleted(
     );
 }
 
+
+// REQUEST FAILED
+
 void NeoGDIntercept::requestFailed(
     uint64_t requestID,
     const std::string& error
 ) {
-    NeoActivityManager::get().fail(requestID, error);
+    if (requestID == 0)
+        return;
+
+    NeoActivityManager::get().fail(
+        requestID,
+        error
+    );
 }
 
 } // namespace neo::intercept
