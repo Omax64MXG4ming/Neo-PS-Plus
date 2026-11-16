@@ -309,7 +309,46 @@ m_panel->setPosition(
 
     m_panel->addChild(closeMenu);
 
-   // ==========================================
+
+// ==========================================
+// MODAL TOUCH BLOCKING
+// ==========================================
+
+void NeoBackendLayer::registerWithTouchDispatcher() {
+    CCDirector::sharedDirector()
+        ->getTouchDispatcher()
+        ->addTargetedDelegate(
+            this,
+            -500,
+            true
+        );
+}
+
+bool NeoBackendLayer::ccTouchBegan(
+    CCTouch* touch,
+    CCEvent* event
+) {
+    // Capturar todos los toques dentro del Inspector.
+    return true;
+}
+
+void NeoBackendLayer::ccTouchMoved(
+    CCTouch* touch,
+    CCEvent* event
+) {}
+
+void NeoBackendLayer::ccTouchEnded(
+    CCTouch* touch,
+    CCEvent* event
+) {}
+
+void NeoBackendLayer::ccTouchCancelled(
+    CCTouch* touch,
+    CCEvent* event
+) {}
+
+
+// ==========================================
 // FILTER BUTTONS
 // ==========================================
 
