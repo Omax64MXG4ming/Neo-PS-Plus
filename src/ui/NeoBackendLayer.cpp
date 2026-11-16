@@ -90,9 +90,9 @@ float getUIScale(const CCSize& size) {
             std::min(scaleX, scaleY)
         )
     );
- }
- 
- void layoutMenuItems(
+}
+
+void layoutMenuItems(
     CCMenu* menu,
     const std::vector<CCMenuItemFont*>& items,
     float centerX,
@@ -140,7 +140,7 @@ float getUIScale(const CCSize& size) {
     menu->setPosition(
         ccp(centerX, centerY)
     );
-  }
+}
 
 }
 
@@ -193,8 +193,6 @@ bool NeoBackendLayer::init() {
         return false;
     }
 
-setTouchEnabled(true);
-
     auto winSize =
         CCDirector::sharedDirector()->getWinSize();
 
@@ -207,25 +205,25 @@ setTouchEnabled(true);
     const float margin = 12.0f * s;
 
     m_panelWidth = std::max(
-    0.0f,
-    winSize.width - margin * 2.0f
+        0.0f,
+        winSize.width - margin * 2.0f
     );
 
     m_panelHeight = std::max(
-    0.0f,
-    winSize.height - margin * 2.0f
+        0.0f,
+        winSize.height - margin * 2.0f
     );
 
     m_panelWidth = std::min(
-    m_panelWidth,
-    1000.0f
+        m_panelWidth,
+        1000.0f
     );
 
     m_panelHeight = std::min(
-    m_panelHeight,
-    680.0f
+        m_panelHeight,
+        680.0f
     );
-    
+
     // Dark overlay.
 
     auto background = CCLayerColor::create(
@@ -250,26 +248,32 @@ setTouchEnabled(true);
         return false;
     }
 
-m_panel->setAnchorPoint(ccp(0, 0));
+    m_panel->setAnchorPoint(ccp(0, 0));
 
-m_panel->setPosition(
-    ccp(
-        (winSize.width - m_panelWidth) / 2.0f,
-        (winSize.height - m_panelHeight) / 2.0f
-    )
-);
+    m_panel->setPosition(
+        ccp(
+            (winSize.width - m_panelWidth) / 2.0f,
+            (winSize.height - m_panelHeight) / 2.0f
+        )
+    );
 
     addChild(m_panel, 1);
 
     const float W = m_panelWidth;
     const float H = m_panelHeight;
 
-    // Title.
+    // ======================================
+    // TITLE
+    // ======================================
 
     auto title = makeLabel(
         "NEO BACKEND INSPECTOR",
         22.0f * s
     );
+
+    if (!title) {
+        return false;
+    }
 
     title->setPosition(
         ccp(W / 2, H - 30.0f * s)
@@ -277,12 +281,18 @@ m_panel->setPosition(
 
     m_panel->addChild(title);
 
-    // Status.
+    // ======================================
+    // STATUS
+    // ======================================
 
     m_statusLabel = makeLabel(
         "LIVE MONITOR | READY",
         10.0f * s
     );
+
+    if (!m_statusLabel) {
+        return false;
+    }
 
     m_statusLabel->setPosition(
         ccp(W / 2, H - 53.0f * s)
@@ -290,7 +300,9 @@ m_panel->setPosition(
 
     m_panel->addChild(m_statusLabel);
 
-    // Close button.
+    // ======================================
+    // CLOSE BUTTON
+    // ======================================
 
     auto closeItem = CCMenuItemFont::create(
         "X",
@@ -298,74 +310,87 @@ m_panel->setPosition(
         menu_selector(NeoBackendLayer::onClose)
     );
 
+    if (!closeItem) {
+        return false;
+    }
+
     closeItem->setScale(1.2f * s);
 
-auto closeMenu = CCMenu::create(
-    closeItem,
-    nullptr
-);
+    auto closeMenu = CCMenu::create(
+        closeItem,
+        nullptr
+    );
 
-
+    if (!closeMenu) {
+        return false;
+    }
 
     closeMenu->setPosition(
         ccp(W - 28.0f * s, H - 28.0f * s)
     );
 
     m_panel->addChild(closeMenu);
-m_internalMenus.push_back(closeMenu);
 
+    m_internalMenus.push_back(closeMenu);
 
-// ==========================================
-// FILTER BUTTONS
-// ==========================================
+    // ======================================
+    // FILTER BUTTONS
+    // ======================================
 
-struct FilterButton {
-    const char* name;
-    SEL_MenuHandler callback;
-};
+    struct FilterButton {
+        const char* name;
+        SEL_MenuHandler callback;
+    };
 
-FilterButton filters[] = {
-    {"ALL", menu_selector(NeoBackendLayer::onFilterAll)},
-    {"NEO", menu_selector(NeoBackendLayer::onFilterNeo)},
-    {"GD", menu_selector(NeoBackendLayer::onFilterGD)},
-    {"GEODE", menu_selector(NeoBackendLayer::onFilterGeode)}
-};
+    FilterButton filters[] = {
+        {"ALL", menu_selector(NeoBackendLayer::onFilterAll)},
+        {"NEO", menu_selector(NeoBackendLayer::onFilterNeo)},
+        {"GD", menu_selector(NeoBackendLayer::onFilterGD)},
+        {"GEODE", menu_selector(NeoBackendLayer::onFilterGeode)}
+    };
 
-auto filterMenu = CCMenu::create();
+    auto filterMenu = CCMenu::create();
 
-std::vector<CCMenuItemFont*> filterItems;
-
-for (const auto& filter : filters) {
-    auto item = CCMenuItemFont::create(
-        filter.name,
-        this,
-        filter.callback
-    );
-
-    if (!item) {
-        continue;
+    if (!filterMenu) {
+        return false;
     }
 
-    filterItems.push_back(item);
-    filterMenu->addChild(item);
-}
+    std::vector<CCMenuItemFont*> filterItems;
 
-const float separatorX = W * 0.40f;
+    for (const auto& filter : filters) {
+        auto item = CCMenuItemFont::create(
+            filter.name,
+            this,
+            filter.callback
+        );
 
-layoutMenuItems(
-    filterMenu,
-    filterItems,
-    separatorX / 2.0f,
-    H - 88.0f * s,
-    separatorX - 30.0f * s,
-    0.65f * s,
-    15.0f * s
-);
+        if (!item) {
+            continue;
+        }
 
-m_panel->addChild(filterMenu);
-m_internalMenus.push_back(filterMenu);
+        filterItems.push_back(item);
+        filterMenu->addChild(item);
+    }
 
-    // Column separator.
+    const float separatorX = W * 0.40f;
+
+    layoutMenuItems(
+        filterMenu,
+        filterItems,
+        separatorX / 2.0f,
+        H - 88.0f * s,
+        separatorX - 30.0f * s,
+        0.65f * s,
+        15.0f * s
+    );
+
+    m_panel->addChild(filterMenu);
+
+    m_internalMenus.push_back(filterMenu);
+
+    // ======================================
+    // COLUMN SEPARATOR
+    // ======================================
 
     auto separator = CCLayerColor::create(
         ccc4(65, 85, 115, 180),
@@ -373,104 +398,123 @@ m_internalMenus.push_back(filterMenu);
         H - 125.0f * s
     );
 
+    if (!separator) {
+        return false;
+    }
+
     separator->setPosition(
         ccp(W * 0.40f, 15.0f * s)
     );
 
     m_panel->addChild(separator);
 
-// ==========================================
-// DETAIL TABS
-// ==========================================
+    // ======================================
+    // DETAIL TABS
+    // ======================================
 
-struct DetailTab {
-    const char* name;
-    SEL_MenuHandler callback;
-};
+    struct DetailTab {
+        const char* name;
+        SEL_MenuHandler callback;
+    };
 
-DetailTab tabs[] = {
-    {"OVERVIEW", menu_selector(NeoBackendLayer::onTabOverview)},
-    {"HEADERS", menu_selector(NeoBackendLayer::onTabHeaders)},
-    {"BODY", menu_selector(NeoBackendLayer::onTabBody)},
-    {"RESPONSE", menu_selector(NeoBackendLayer::onTabResponse)}
-};
+    DetailTab tabs[] = {
+        {"OVERVIEW", menu_selector(NeoBackendLayer::onTabOverview)},
+        {"HEADERS", menu_selector(NeoBackendLayer::onTabHeaders)},
+        {"BODY", menu_selector(NeoBackendLayer::onTabBody)},
+        {"RESPONSE", menu_selector(NeoBackendLayer::onTabResponse)}
+    };
 
-auto tabMenu = CCMenu::create();
+    auto tabMenu = CCMenu::create();
 
-std::vector<CCMenuItemFont*> tabItems;
-
-for (const auto& tab : tabs) {
-    auto item = CCMenuItemFont::create(
-        tab.name,
-        this,
-        tab.callback
-    );
-
-    if (!item) {
-        continue;
+    if (!tabMenu) {
+        return false;
     }
 
-    tabItems.push_back(item);
-    tabMenu->addChild(item);
-}
+    std::vector<CCMenuItemFont*> tabItems;
 
-const float detailLeft = separatorX + 12.0f * s;
-const float detailRight = W - 12.0f * s;
+    for (const auto& tab : tabs) {
+        auto item = CCMenuItemFont::create(
+            tab.name,
+            this,
+            tab.callback
+        );
 
-layoutMenuItems(
-    tabMenu,
-    tabItems,
-    (detailLeft + detailRight) / 2.0f,
-    H - 88.0f * s,
-    detailRight - detailLeft,
-    0.60f * s,
-    10.0f * s
-);
+        if (!item) {
+            continue;
+        }
 
-m_panel->addChild(tabMenu);
-m_internalMenus.push_back(tabMenu);
+        tabItems.push_back(item);
+        tabMenu->addChild(item);
+    }
 
-    // Details label with automatic line wrapping.
-    
-const float detailX = separatorX + 14.0f * s;
+    const float detailLeft = separatorX + 12.0f * s;
+    const float detailRight = W - 12.0f * s;
 
-const float detailWidth =
-    W - detailX - 15.0f * s;
+    layoutMenuItems(
+        tabMenu,
+        tabItems,
+        (detailLeft + detailRight) / 2.0f,
+        H - 88.0f * s,
+        detailRight - detailLeft,
+        0.60f * s,
+        10.0f * s
+    );
 
-const float detailHeight =
-    H - 145.0f * s;
+    m_panel->addChild(tabMenu);
 
-m_detailsLabel = makeWrappedLabel(
-    "Select a request to inspect its details.",
-    10.0f * s,
-    detailWidth,
-    detailHeight
-);
+    m_internalMenus.push_back(tabMenu);
 
-if (!m_detailsLabel) {
-    return false;
-}
+    // ======================================
+    // DETAILS LABEL
+    // ======================================
 
-m_detailsLabel->setAnchorPoint(ccp(0, 1));
+    const float detailX = separatorX + 14.0f * s;
 
-m_detailsLabel->setPosition(
-    ccp(
-        detailX,
-        H - 115.0f * s
-    )
-);
+    const float detailWidth =
+        W - detailX - 15.0f * s;
 
-m_panel->addChild(m_detailsLabel);
+    const float detailHeight =
+        H - 145.0f * s;
 
-    // Request list container.
+    m_detailsLabel = makeWrappedLabel(
+        "Select a request to inspect its details.",
+        10.0f * s,
+        detailWidth,
+        detailHeight
+    );
+
+    if (!m_detailsLabel) {
+        return false;
+    }
+
+    m_detailsLabel->setAnchorPoint(ccp(0, 1));
+
+    m_detailsLabel->setPosition(
+        ccp(
+            detailX,
+            H - 115.0f * s
+        )
+    );
+
+    m_panel->addChild(m_detailsLabel);
+
+    // ======================================
+    // REQUEST LIST CONTAINER
+    // ======================================
 
     m_listContainer = CCNode::create();
+
+    if (!m_listContainer) {
+        return false;
+    }
 
     m_listContainer->setTag(1000);
 
     m_panel->addChild(m_listContainer);
 
-    // Live listener.
+    // ======================================
+    // LIVE LISTENER
+    // ======================================
 
     std::weak_ptr<std::atomic<bool>> weakDirty =
         m_dirtySignal;
@@ -489,8 +533,71 @@ m_panel->addChild(m_detailsLabel);
     scheduleUpdate();
 
     return true;
-
 }
+
+// ==========================================
+// ENTER
+// ==========================================
+
+void NeoBackendLayer::onEnter() {
+    CCLayer::onEnter();
+
+    // Register modal touch delegate.
+    // Internal menus will receive priority -130.
+    // The modal itself uses priority -129.
+
+    CCDirector::sharedDirector()
+        ->getTouchDispatcher()
+        ->addTargetedDelegate(
+            this,
+            -129,
+            true
+        );
+}
+
+// ==========================================
+// ENTER TRANSITION FINISHED
+// ==========================================
+
+void NeoBackendLayer::onEnterTransitionDidFinish() {
+    CCLayer::onEnterTransitionDidFinish();
+
+    // At this point, the internal menus
+    // should already have registered their handlers.
+
+    for (auto menu : m_internalMenus) {
+        if (menu) {
+            menu->setHandlerPriority(-130);
+        }
+    }
+}
+
+// ==========================================
+// MODAL TOUCH CALLBACKS
+// ==========================================
+
+bool NeoBackendLayer::ccTouchBegan(
+    CCTouch* touch,
+    CCEvent* event
+) {
+    // Consume touches not handled by internal menus.
+    return true;
+}
+
+void NeoBackendLayer::ccTouchMoved(
+    CCTouch* touch,
+    CCEvent* event
+) {}
+
+void NeoBackendLayer::ccTouchEnded(
+    CCTouch* touch,
+    CCEvent* event
+) {}
+
+void NeoBackendLayer::ccTouchCancelled(
+    CCTouch* touch,
+    CCEvent* event
+) {}
 
 // ==========================================
 // UPDATE
@@ -531,7 +638,7 @@ void NeoBackendLayer::refreshList() {
     const float W = m_panelWidth;
     const float H = m_panelHeight;
 
-const float listWidth = W * 0.40f - 25.0f * s;
+    const float listWidth = W * 0.40f - 25.0f * s;
 
     float y = H - 120.0f * s;
 
@@ -592,56 +699,68 @@ const float listWidth = W * 0.40f - 25.0f * s;
             << " | "
             << shorten(request.url, 24);
 
-auto item = CCMenuItemFont::create(
-    row.str().c_str(),
-    this,
-    menu_selector(NeoBackendLayer::onSelectRequest)
-);
+        auto item = CCMenuItemFont::create(
+            row.str().c_str(),
+            this,
+            menu_selector(NeoBackendLayer::onSelectRequest)
+        );
 
-if (!item) {
-    continue;
-}
+        if (!item) {
+            continue;
+        }
 
-item->setTag(displayed);
-item->setAnchorPoint(ccp(0, 0.5f));
+        item->setTag(displayed);
+        item->setAnchorPoint(ccp(0, 0.5f));
 
-// Tamaño máximo permitido para la fila.
-const float availableRowWidth = listWidth - 15.0f * s;
+        // Maximum row width.
 
-const float baseRowScale = 0.55f * s;
+        const float availableRowWidth =
+            listWidth - 15.0f * s;
 
-float rowScale = baseRowScale;
+        const float baseRowScale =
+            0.55f * s;
 
-const float naturalWidth = item->getContentSize().width;
+        float rowScale = baseRowScale;
 
-if (naturalWidth * rowScale > availableRowWidth) {
-    rowScale = availableRowWidth / naturalWidth;
-}
+        const float naturalWidth =
+            item->getContentSize().width;
 
-item->setScale(rowScale);
+        if (naturalWidth * rowScale > availableRowWidth) {
+            rowScale = availableRowWidth / naturalWidth;
+        }
 
-auto menu = CCMenu::create(
-    item,
-    nullptr
-);
+        item->setScale(rowScale);
 
+        auto menu = CCMenu::create(
+            item,
+            nullptr
+        );
 
-menu->setPosition(
-    ccp(
-        15.0f * s,
-        y
-    )
-);
+        if (!menu) {
+            continue;
+        }
 
-m_listContainer->addChild(menu);
+        menu->setPosition(
+            ccp(
+                15.0f * s,
+                y
+            )
+        );
 
-// El menú ya está añadido y registrado.
-menu->setHandlerPriority(-130);
+        m_listContainer->addChild(menu);
+
+        // Dynamic menu: it is added while the
+        // Inspector is already running.
+        menu->setHandlerPriority(-130);
 
         y -= 29.0f * s;
 
         displayed++;
     }
+
+    // ======================================
+    // EMPTY STATE
+    // ======================================
 
     if (m_selectedID == 0 && !m_visibleIDs.empty()) {
         m_selectedID = m_visibleIDs.front();
@@ -653,15 +772,21 @@ menu->setHandlerPriority(-130);
             10.0f * s
         );
 
-        empty->setPosition(
-            ccp(
-                listWidth / 2,
-                H / 2
-            )
-        );
+        if (empty) {
+            empty->setPosition(
+                ccp(
+                    listWidth / 2,
+                    H / 2
+                )
+            );
 
-        m_listContainer->addChild(empty);
+            m_listContainer->addChild(empty);
+        }
     }
+
+    // ======================================
+    // STATUS
+    // ======================================
 
     std::stringstream status;
 
@@ -869,6 +994,10 @@ void NeoBackendLayer::onSelectRequest(
     auto item =
         static_cast<CCMenuItemFont*>(sender);
 
+    if (!item) {
+        return;
+    }
+
     const int index = item->getTag();
 
     if (
@@ -938,14 +1067,22 @@ void NeoBackendLayer::onTabResponse(CCObject*) {
 // ==========================================
 // CLOSE
 // ==========================================
+
 void NeoBackendLayer::onClose(CCObject*) {
     removeFromParentAndCleanup(true);
 }
+
 // ==========================================
 // CLEANUP
 // ==========================================
 
 void NeoBackendLayer::onExit() {
+    // Remove our manually registered touch delegate.
+
+    CCDirector::sharedDirector()
+        ->getTouchDispatcher()
+        ->removeDelegate(this);
+
     if (m_listenerID != 0) {
         NeoActivityManager::get().removeListener(
             m_listenerID
@@ -960,39 +1097,3 @@ void NeoBackendLayer::onExit() {
 }
 
 NeoBackendLayer::~NeoBackendLayer() = default;
-
-// ==========================================
-// MODAL TOUCH BLOCKING
-// ==========================================
-
-void NeoBackendLayer::registerWithTouchDispatcher() {
-    CCDirector::sharedDirector()
-        ->getTouchDispatcher()
-        ->addTargetedDelegate(
-            this,
-            -129,
-            true
-        );
-}
-
-bool NeoBackendLayer::ccTouchBegan(
-    CCTouch* touch,
-    CCEvent* event
-) {
-    return true;
-}
-
-void NeoBackendLayer::ccTouchMoved(
-    CCTouch* touch,
-    CCEvent* event
-) {}
-
-void NeoBackendLayer::ccTouchEnded(
-    CCTouch* touch,
-    CCEvent* event
-) {}
-
-void NeoBackendLayer::ccTouchCancelled(
-    CCTouch* touch,
-    CCEvent* event
-) {}
