@@ -59,7 +59,7 @@
             "type": "keybind",
             "name": "Reload Textures Keybind",
             "default": "Ctrl+Shift+T"
-        }
+        },
         "backend-url": {
             "name": "Backend URL",
             "description": "Backend server URL",
