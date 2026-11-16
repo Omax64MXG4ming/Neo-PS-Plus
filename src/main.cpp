@@ -4,6 +4,8 @@
 #include <Geode/loader/SettingV3.hpp>
 
 #include "connection/NeoConnectionFix.hpp"
+#include "backend/NeoBackend.hpp"
+#include "ui/NeoBackendLayer.hpp"
 
 using namespace geode::prelude;
 static bool isReload = false;
