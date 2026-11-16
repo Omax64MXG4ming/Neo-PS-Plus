@@ -904,24 +904,30 @@ void NeoBackendLayer::refreshDetails() {
         // REQUEST HEADERS
         // ==================================
 
-        case 1: {
-            details << "REQUEST HEADERS\n\n";
+case 1: {
+    details << "REQUEST HEADERS\n";
+    details << "==============================\n\n";
 
-            if (request.requestHeaders.empty()) {
-                details << "No request headers captured.";
-            }
-            else {
-                for (const auto& [key, value] : request.requestHeaders) {
-                    details
-                        << key
-                        << ": "
-                        << value
-                        << "\n\n";
-                }
-            }
+    if (request.requestHeaders.empty()) {
+        details << "No request headers captured.";
+    }
+    else {
+        details
+            << "TOTAL HEADERS: "
+            << request.requestHeaders.size()
+            << "\n\n";
 
-            break;
+        for (const auto& [key, value] : request.requestHeaders) {
+            details
+                << "[" << key << "]\n"
+                << value
+                << "\n\n";
         }
+    }
+
+    break;
+}
+
 
         // ==================================
         // REQUEST BODY
