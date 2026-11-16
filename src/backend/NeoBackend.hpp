@@ -56,7 +56,7 @@ namespace neo::backend {
         ) const;
 
         std::string m_baseURL =
-            "https://neops.x10.mx";
+            neo::config::getBackendURL()
 
     };
 
