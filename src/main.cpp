@@ -212,40 +212,6 @@ class $modify(AltMenuLayer, MenuLayer) {
         // NEO INSPECTOR BUTTON
         // ------------------------------------------
 
-        if (!this->getChildByID("neo-inspector-menu")) {
-
-            auto inspectorSprite = ButtonSprite::create(
-                "NEO INSPECTOR",
-                "goldFont.fnt",
-                "GJ_button_01.png",
-                0.65f
-            );
-
-            if (inspectorSprite) {
-
-                auto inspectorButton = CCMenuItemSpriteExtra::create(
-                    inspectorSprite,
-                    this,
-                    menu_selector(AltMenuLayer::onNeoInspector)
-                );
-
-                if (inspectorButton) {
-
-                    auto inspectorMenu = CCMenu::create();
-                    inspectorMenu->setID("neo-inspector-menu");
-
-                    inspectorMenu->addChild(inspectorButton);
-
-                    inspectorMenu->setPosition(
-                        winSize.width - 95.f,
-                        35.f
-                    );
-
-                    this->addChild(inspectorMenu, 100);
-                }
-            }
-        }
-
         return true;
     }
 
