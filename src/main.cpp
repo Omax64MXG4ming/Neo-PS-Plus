@@ -8,6 +8,7 @@
 #include "ui/NeoBackendLayer.hpp"
 
 using namespace geode::prelude;
+
 static bool isReload = false;
 
 // --------------------------------------------------
@@ -214,32 +215,38 @@ class $modify(AltMenuLayer, MenuLayer) {
 
         if (!this->getChildByID("neo-inspector-menu")) {
 
-auto inspectorSprite = ButtonSprite::create(
-    "Interceptor",
-    "goldFont.fnt",
-    "GJ_button_01.png",
-    0.65f
-);
+            auto inspectorSprite = ButtonSprite::create(
+                "Interceptor",
+                "goldFont.fnt",
+                "GJ_button_01.png",
+                0.65f
+            );
 
-auto inspectorButton = CCMenuItemSpriteExtra::create(
-    inspectorSprite,
-    this,
-    menu_selector(AltMenuLayer::onNeoInspector)
-);
+            if (inspectorSprite) {
 
-auto menu = CCMenu::create(
-    inspectorButton,
-    nullptr
-);
+                auto inspectorButton = CCMenuItemSpriteExtra::create(
+                    inspectorSprite,
+                    this,
+                    menu_selector(AltMenuLayer::onNeoInspector)
+                );
 
-menu->setPosition(
-    ccp(
-        CCDirector::sharedDirector()->getWinSize().width - 65.0f,
-        CCDirector::sharedDirector()->getWinSize().height - 35.0f
-    )
-);
+                auto inspectorMenu = CCMenu::create(
+                    inspectorButton,
+                    nullptr
+                );
 
-this->addChild(menu, 100);
+                if (inspectorMenu) {
+
+                    inspectorMenu->setID("neo-inspector-menu");
+
+                    inspectorMenu->setPosition(
+                        ccp(
+                            winSize.width - 65.0f,
+                            winSize.height - 35.0f
+                        )
+                    );
+
+                    this->addChild(inspectorMenu, 100);
                 }
             }
         }
@@ -260,8 +267,8 @@ this->addChild(menu, 100);
     }
 
     void onNeoInspector(CCObject*) {
-    log::info("[NeoInspector] Opening Inspector");
-    NeoBackendLayer::open(this);
+        log::info("[NeoInspector] Opening Inspector");
+        NeoBackendLayer::open(this);
     }
 };
 
@@ -327,23 +334,22 @@ $on_game(Loaded) {
 $on_mod(Loaded) {
 
     neo::backend::NeoBackend::get().get(
-    "/",
-    [](neo::backend::NeoResponse response) {
-        if (!response.success) {
-            log::error(
-                "[NeoBackend] Request failed: {}",
-                response.error
+        "/",
+        [](neo::backend::NeoResponse response) {
+            if (!response.success) {
+                log::error(
+                    "[NeoBackend] Request failed: {}",
+                    response.error
+                );
+                return;
+            }
+
+            log::info(
+                "[NeoBackend] HTTP {}",
+                response.httpCode
             );
-            return;
         }
-
-        log::info(
-            "[NeoBackend] HTTP {}",
-            response.httpCode
-        );
-    }
-);
-
+    );
 }
 
 // --------------------------------------------------
