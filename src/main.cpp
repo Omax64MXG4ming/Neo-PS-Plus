@@ -4,8 +4,6 @@
 #include <Geode/loader/SettingV3.hpp>
 
 #include "connection/NeoConnectionFix.hpp"
-#include "backend/NeoBackend.hpp"
-#include "ui/NeoBackendLayer.hpp"
 
 using namespace geode::prelude;
 static bool isReload = false;
@@ -291,28 +289,6 @@ $on_game(Loaded) {
 // --------------------------------------------------
 // NEO BACKEND INITIALIZATION
 // --------------------------------------------------
-
-$on_mod(Loaded) {
-
-    neo::backend::NeoBackend::get().get(
-    "/",
-    [](neo::backend::NeoResponse response) {
-        if (!response.success) {
-            log::error(
-                "[NeoBackend] Request failed: {}",
-                response.error
-            );
-            return;
-        }
-
-        log::info(
-            "[NeoBackend] HTTP {}",
-            response.httpCode
-        );
-    }
-);
-
-}
 
 // --------------------------------------------------
 // GAUNTLET SELECT FIX
