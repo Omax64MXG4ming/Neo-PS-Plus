@@ -1,3 +1,6 @@
+# 1.0.5
+Removed Intercept Nodes From MenuLayer, and Automated The Editor Layer Fix
+
 # 1.0.4
 Added Api Form [ServerAPI](https://github.com/AlphiiGD/server-api/tree/main)
 for Fix False Connections In Gauntlets Strings And Cocos Lib
