@@ -305,13 +305,14 @@ auto closeMenu = CCMenu::create(
     nullptr
 );
 
-closeMenu->setHandlerPriority(-130);
+
 
     closeMenu->setPosition(
         ccp(W - 28.0f * s, H - 28.0f * s)
     );
 
     m_panel->addChild(closeMenu);
+m_internalMenus.push_back(closeMenu);
 
 
 // ==========================================
@@ -360,8 +361,9 @@ layoutMenuItems(
     0.65f * s,
     15.0f * s
 );
-filterMenu->setHandlerPriority(-130);
+
 m_panel->addChild(filterMenu);
+m_internalMenus.push_back(filterMenu);
 
     // Column separator.
 
@@ -377,7 +379,7 @@ m_panel->addChild(filterMenu);
 
     m_panel->addChild(separator);
 
-    // ==========================================
+// ==========================================
 // DETAIL TABS
 // ==========================================
 
@@ -424,8 +426,9 @@ layoutMenuItems(
     0.60f * s,
     10.0f * s
 );
-tabMenu->setHandlerPriority(-130);
+
 m_panel->addChild(tabMenu);
+m_internalMenus.push_back(tabMenu);
 
     // Details label with automatic line wrapping.
     
@@ -622,7 +625,7 @@ auto menu = CCMenu::create(
     nullptr
 );
 
-menu->setHandlerPriority(-130);
+
 menu->setPosition(
     ccp(
         15.0f * s,
@@ -631,6 +634,9 @@ menu->setPosition(
 );
 
 m_listContainer->addChild(menu);
+
+// El menú ya está añadido y registrado.
+menu->setHandlerPriority(-130);
 
         y -= 29.0f * s;
 
