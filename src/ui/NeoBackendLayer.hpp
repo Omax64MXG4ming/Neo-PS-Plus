@@ -32,33 +32,39 @@ protected:
     cocos2d::CCLabelTTF* m_statusLabel = nullptr;
     cocos2d::CCLabelTTF* m_detailsLabel = nullptr;
 
+    // Static Inspector menus.
+    std::vector<cocos2d::CCMenu*> m_internalMenus;
+
+    // Dynamic request menus awaiting priority configuration.
+    std::vector<cocos2d::CCMenu*> m_pendingMenus;
+
+    bool m_touchPrioritiesConfigured = false;
+
     bool init() override;
+
+    void onEnter() override;
     void update(float dt) override;
-void onEnter() override;
-std::vector<cocos2d::CCMenu*> m_internalMenus;
-void onEnterTransitionDidFinish() override;
-
-bool ccTouchBegan(
-    cocos2d::CCTouch* touch,
-    cocos2d::CCEvent* event
-) override;
-
-void ccTouchMoved(
-    cocos2d::CCTouch* touch,
-    cocos2d::CCEvent* event
-) override;
-
-void ccTouchEnded(
-    cocos2d::CCTouch* touch,
-    cocos2d::CCEvent* event
-) override;
-
-void ccTouchCancelled(
-    cocos2d::CCTouch* touch,
-    cocos2d::CCEvent* event
-) override;
-
     void onExit() override;
+
+    bool ccTouchBegan(
+        cocos2d::CCTouch* touch,
+        cocos2d::CCEvent* event
+    ) override;
+
+    void ccTouchMoved(
+        cocos2d::CCTouch* touch,
+        cocos2d::CCEvent* event
+    ) override;
+
+    void ccTouchEnded(
+        cocos2d::CCTouch* touch,
+        cocos2d::CCEvent* event
+    ) override;
+
+    void ccTouchCancelled(
+        cocos2d::CCTouch* touch,
+        cocos2d::CCEvent* event
+    ) override;
 
     void refreshList();
     void refreshDetails();
