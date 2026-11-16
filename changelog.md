@@ -1,3 +1,6 @@
+# 1.0.6
+Re-added Intercept Layer and Nodes From main.cpp and Fixed Non-Update Status of Request
+
 # 1.0.5
 Removed Intercept Nodes From MenuLayer, and Automated The Editor Layer Fix
 
