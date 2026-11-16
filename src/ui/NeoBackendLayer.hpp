@@ -34,10 +34,8 @@ protected:
 
     bool init() override;
     void update(float dt) override;
-    void onEnter() override;
-    std::vector<cocos2d::CCMenu*> m_internalMenus;
-    void onExit() override;
-void registerWithTouchDispatcher() override;
+void onEnter() override;
+void onEnterTransitionDidFinish() override;
 
 bool ccTouchBegan(
     cocos2d::CCTouch* touch,
@@ -58,6 +56,9 @@ void ccTouchCancelled(
     cocos2d::CCTouch* touch,
     cocos2d::CCEvent* event
 ) override;
+
+    void onExit() override;
+void registerWithTouchDispatcher() override;
 
     void refreshList();
     void refreshDetails();
