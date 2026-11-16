@@ -10,6 +10,13 @@
     "version": "1.0.4",
     "developer": "Omar Studios",
     "description": "An Mod For Neo PS, Uses Backend and More Inspector",
+		"links": {
+		"source": "https://github.com/Omax64MXG4ming/Neo-PS-Plus"
+	},
+	"issues": {
+		"url": "https://github.com/Omax64MXG4ming/neo-android-launcher/issues",
+		"info": "If you see or detect an error or bug within the launcher or while playing, please report it to the GitHub issues page."
+	},
     "settings": {
         "exit": {
             "type": "bool",
