@@ -528,7 +528,7 @@ bool NeoBackendLayer::init() {
             }
         );
 
-    m_dirtySignal->store(true);
+m_dirtySignal->store(true);
 
     scheduleUpdate();
 
@@ -590,9 +590,12 @@ void NeoBackendLayer::ccTouchCancelled(
 void NeoBackendLayer::update(float dt) {
     CCLayer::update(dt);
 
-    // Configure static menus only after they have
-    // entered the scene and registered their handlers.
+    if (m_dirtySignal && m_dirtySignal->exchange(false)) {
+        refreshList();
+        refreshDetails();
+    }
 
+    // Configure static menus once they are registered.
     if (!m_touchPrioritiesConfigured) {
         for (auto menu : m_internalMenus) {
             if (menu) {
@@ -603,9 +606,7 @@ void NeoBackendLayer::update(float dt) {
         m_touchPrioritiesConfigured = true;
     }
 
-    // Dynamic menus are configured one update after
-    // being added to the running scene.
-
+    // Configure newly-created request menus.
     if (!m_pendingMenus.empty()) {
         for (auto menu : m_pendingMenus) {
             if (menu) {
@@ -614,15 +615,8 @@ void NeoBackendLayer::update(float dt) {
         }
 
         m_pendingMenus.clear();
-m_listContainer->removeAllChildrenWithCleanup(true);
-    }
-
-    if (m_dirtySignal && m_dirtySignal->exchange(false)) {
-        refreshList();
-        refreshDetails();
     }
 }
-
 
 // ==========================================
 // REFRESH REQUEST LIST
@@ -630,10 +624,14 @@ m_listContainer->removeAllChildrenWithCleanup(true);
 
 void NeoBackendLayer::refreshList() {
     if (!m_listContainer) {
-        return;
-    }
+    return;
+}
 
-    m_listContainer->removeAllChildrenWithCleanup(true);
+// Remove old request rows.
+m_listContainer->removeAllChildrenWithCleanup(true);
+
+// Old menu pointers are no longer valid.
+m_pendingMenus.clear();
 
     auto history =
         NeoActivityManager::get().getHistory();
@@ -764,7 +762,7 @@ menu->setPosition(
 
 m_listContainer->addChild(menu);
 
-// Queue priority configuration for the next update.
+// Register this menu for priority configuration.
 m_pendingMenus.push_back(menu);
 
 y -= 29.0f * s;
