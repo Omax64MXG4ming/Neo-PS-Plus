@@ -78,5 +78,121 @@
             "type": "bool",
             "default": true
         }
+"physics-title": {
+            "type": "title",
+            "name": "Physics"
+        },
+        "wait-time": {
+            "name": "Idle Time (seconds)",
+            "description": "how long till screensaver starts",
+            "type": "int",
+            "default": 30,
+            "min": 5,
+            "max": 300,
+            "control": {
+                "slider": true,
+                "arrows": true,
+                "arrow-step": 5
+            }
+        },
+        "physics-speed": {
+            "name": "Speed",
+            "description": "gravity multiplier",
+            "type": "int",
+            "default": 10,
+            "min": 1,
+            "max": 20,
+            "control": {
+                "slider": true,
+                "arrows": true
+            }
+        },
+        "orbs-title": {
+            "type": "title",
+            "name": "orbs"
+        },
+        "item-count": {
+            "name": "Orb Count",
+            "description": "how many orbs spawn per cycle",
+            "type": "int",
+            "default": 120,
+            "min": 1,
+            "max": 300,
+            "control": {
+                "slider": true,
+                "arrows": true,
+                "arrow-step": 10
+            }
+        },
+        "cube-title": {
+            "type": "title",
+            "name": "Player Cube"
+        },
+        "player-chance": {
+            "name": "Cube Chance (%)",
+            "description": "chance your cube shows up too",
+            "type": "int",
+            "default": 50,
+            "min": 0,
+            "max": 100,
+            "control": {
+                "slider": true,
+                "arrows": true
+            }
+        },
+        "bg-title": {
+            "type": "title",
+            "name": "Background"
+        },
+        "background-mode": {
+            "name": "Background Type",
+            "description": "what kind of background (blur needs BlurAPI)",
+            "type": "string",
+            "default": "color",
+            "one-of": ["color", "image", "blur"]
+        },
+        "overlay-color": {
+            "name": "Background Color",
+            "description": "rgb color for the overlay",
+            "type": "rgb",
+            "default": [0, 0, 0]
+        },
+        "overlay-opacity": {
+            "name": "Background Opacity",
+            "description": "transparency level (0 = see through, 255 = solid)",
+            "type": "int",
+            "default": 200,
+            "min": 0,
+            "max": 255
+        },
+        "image-path": {
+            "name": "Background Image",
+            "description": "file path for custom image (only works if type is set to image)",
+            "type": "file",
+            "default": ""
+        },
+        "image-fit": {
+            "name": "Image Fit",
+            "description": "stretch = fill screen, zoom = keep ratio and crop",
+            "type": "string",
+            "default": "stretch",
+            "one-of": ["stretch", "zoom"]
+        },
+        "misc-title": {
+            "type": "title",
+            "name": "Misc"
+        },
+        "infinite-fall": {
+            "name": "No Ground (Infinite Fall)",
+            "description": "orbs just fall forever instead of piling up",
+            "type": "bool",
+            "default": false
+        }
+    },
+    "dependencies": {
+        "thesillydoggo.blur-api": {
+            "version": ">=v1.0.0",
+            "required": false
+		}
     }
 }
