@@ -6,7 +6,7 @@
 #include "connection/NeoConnectionFix.hpp"
 #include "backend/NeoBackend.hpp"
 #include "ui/NeoBackendLayer.hpp"
-
+#include "mainlevels/NeoMainLevelManager.hpp"
 using namespace geode::prelude;
 
 static bool isReload = false;
@@ -328,11 +328,16 @@ $on_game(Loaded) {
 }
 
 // --------------------------------------------------
-// NEO BACKEND INITIALIZATION
+// NEO PS Plus Hooking INITIALIZATION
 // --------------------------------------------------
 
 $on_mod(Loaded) {
 
+log::info(
+    "[NeoMainLevels] Registered {} levels",
+    neo::mainlevels::NeoMainLevelManager::get().getLevels().size()
+);
+    
     neo::backend::NeoBackend::get().get(
         "/",
         [](neo::backend::NeoResponse response) {
