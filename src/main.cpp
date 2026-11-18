@@ -333,9 +333,11 @@ $on_game(Loaded) {
 
 $on_mod(Loaded) {
 
+auto& levelManager = neo::mainlevels::NeoMainLevelManager::get();
+
 log::info(
     "[NeoMainLevels] Registered {} levels",
-    neo::mainlevels::NeoMainLevelManager::get().getLevels().size()
+    levelManager.getLevels().size()
 );
     
     neo::backend::NeoBackend::get().get(
