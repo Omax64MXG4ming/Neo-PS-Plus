@@ -2,7 +2,7 @@
 
 namespace neo::mainlevels {
 
-const std::vector<NeoMainLevel> NeoLevelRegistry::s_levels = {
+static const std::vector<NeoMainLevel> s_levels = {
 
     {
         10001,
@@ -12,7 +12,7 @@ const std::vector<NeoMainLevel> NeoLevelRegistry::s_levels = {
         1,
         "",
         "",
-        "kS38,1_0_2_0_3_0",
+        "",
         false
     },
 
@@ -24,7 +24,19 @@ const std::vector<NeoMainLevel> NeoLevelRegistry::s_levels = {
         2,
         "",
         "",
-        "kS38,1_0_2_0_3_0",
+        "",
+        false
+    },
+
+    {
+        10003,
+        "Neo Revolution",
+        GJDifficulty::Harder,
+        7,
+        3,
+        "",
+        "",
+        "",
         false
     }
 
@@ -36,8 +48,9 @@ const std::vector<NeoMainLevel>& NeoLevelRegistry::getLevels() {
 
 const NeoMainLevel* NeoLevelRegistry::getLevel(int id) {
     for (const auto& level : s_levels) {
-        if (level.id == id)
+        if (level.id == id) {
             return &level;
+        }
     }
 
     return nullptr;
@@ -45,6 +58,10 @@ const NeoMainLevel* NeoLevelRegistry::getLevel(int id) {
 
 bool NeoLevelRegistry::exists(int id) {
     return getLevel(id) != nullptr;
+}
+
+size_t NeoLevelRegistry::count() {
+    return s_levels.size();
 }
 
 }
