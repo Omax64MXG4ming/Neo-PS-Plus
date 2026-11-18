@@ -32,8 +32,7 @@ public:
 
     static bool exists(int id);
 
-private:
-    static const std::vector<NeoMainLevel> s_levels;
+    static size_t count();
 };
 
 }
