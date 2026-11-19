@@ -1,201 +1,439 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LevelSearchLayer.hpp>
 #include <Geode/utils/general.hpp>
+
 #include <vector>
+#include <string>
 #include <algorithm>
 #include <fstream>
 
 using namespace geode::prelude;
 
-std::vector<std::string> getHistory() {
-    auto path = (Mod::get()->getSaveDir() / "history.txt").string();
+namespace neo::searchHistory {
 
-    std::vector<std::string> history;
-    std::ifstream file(path);
+    static constexpr size_t MAX_HISTORY = 20;
+    static constexpr size_t MAX_VISIBLE = 8;
+    static constexpr size_t MAX_LABEL_LENGTH = 32;
 
-    std::string line;
-    while (std::getline(file, line)) {
-        if (!line.empty())
-            history.push_back(line);
+    // --------------------------------------------------
+    // Storage
+    // --------------------------------------------------
+
+    static std::string getHistoryPath() {
+        return (Mod::get()->getSaveDir() / "history.txt").string();
     }
 
-    return history;
-}
+    static std::vector<std::string> getHistory() {
+        std::vector<std::string> history;
 
-void saveHistory(std::vector<std::string> const& history) {
-    auto path = (Mod::get()->getSaveDir() / "history.txt").string();
+        std::ifstream file(getHistoryPath());
+        if (!file.is_open())
+            return history;
 
-    std::ofstream file(path);
+        std::string line;
 
-    if (!file.is_open())
-        return;
+        while (std::getline(file, line)) {
+            if (!line.empty()) {
+                history.push_back(line);
+            }
 
-    for (auto const& str : history) {
-        file << str << "\n";
-    }
-}
+            if (history.size() >= MAX_HISTORY)
+                break;
+        }
 
-void pushHistory(std::string const& text) {
-    if (text.empty()) return;
-    auto history = getHistory();
-    history.erase(std::remove(history.begin(), history.end(), text), history.end());
-    history.insert(history.begin(), text);
-    if (history.size() > 20) history.pop_back();
-    saveHistory(history);
-}
-
-class SearchHistoryPopup : public FLAlertLayer {
-protected:
-    std::vector<std::string> m_history;
-    CCMenu* m_listMenu;
-
-    bool init(std::vector<std::string> history) {
-        if (!FLAlertLayer::init(150)) return false;
-
-        m_history = history;
-        auto winSize = CCDirector::get()->getWinSize();
-
-        auto bg = CCScale9Sprite::create("GJ_square01.png", { 0, 0, 80, 80 });
-        bg->setContentSize({ 300.f, 250.f });
-        bg->setPosition(winSize / 2);
-        m_mainLayer->addChild(bg);
-
-        auto title = CCLabelBMFont::create("Search History", "goldFont.fnt");
-        title->setPosition({ winSize.width / 2, winSize.height / 2 + 105.f });
-        m_mainLayer->addChild(title);
-
-        m_listMenu = CCMenu::create();
-        m_listMenu->setPosition({ winSize.width / 2.f, winSize.height / 2.f + 20.f });
-        m_mainLayer->addChild(m_listMenu);
-
-        auto closeBtn = CCMenuItemSpriteExtra::create(
-            CCSprite::createWithSpriteFrameName("GJ_closeBtn_001.png"),
-            this,
-            menu_selector(SearchHistoryPopup::onClose)
-        );
-        auto closeMenu = CCMenu::create();
-        closeMenu->setPosition({ winSize.width / 2 - 140.f, winSize.height / 2 + 115.f });
-        closeMenu->addChild(closeBtn);
-        m_mainLayer->addChild(closeMenu);
-
-        this->refreshList();
-
-        auto clearBtn = CCMenuItemSpriteExtra::create(
-            ButtonSprite::create("Clear All", "goldFont.fnt", "GJ_button_01.png", .8f),
-            this,
-            menu_selector(SearchHistoryPopup::onClear)
-        );
-        auto clearMenu = CCMenu::create();
-        clearMenu->setPosition({ winSize.width / 2, winSize.height / 2 - 100.f });
-        clearMenu->addChild(clearBtn);
-        m_mainLayer->addChild(clearMenu);
-
-        this->setTouchEnabled(true);
-        this->setKeypadEnabled(true);
-        CCDirector::get()->getTouchDispatcher()->addTargetedDelegate(this, -500, true);
-
-        return true;
+        return history;
     }
 
-    void refreshList() {
-        m_listMenu->removeAllChildren();
-        float y = 60.f;
-        int count = 0;
-        for (auto const& str : m_history) {
-            if (count > 7) break;
-            auto lbl = CCLabelBMFont::create(str.c_str(), "bigFont.fnt");
-            lbl->setScale(0.5f);
-            auto btn = CCMenuItemSpriteExtra::create(
-                lbl,
-                this,
-                menu_selector(SearchHistoryPopup::onSelect)
-            );
-            btn->setID(str);
-            btn->setPosition({ 0.f, y });
-            m_listMenu->addChild(btn);
-            y -= 22.f;
-            count++;
+    static void saveHistory(
+        std::vector<std::string> const& history
+    ) {
+        std::ofstream file(getHistoryPath(), std::ios::trunc);
+
+        if (!file.is_open())
+            return;
+
+        for (auto const& entry : history) {
+            file << entry << '\n';
         }
     }
- // reason i made this mod is since i keep trying to search denouement or something and missspell it lmao
-    void onSelect(CCObject* sender) {
-        auto str = static_cast<CCNode*>(sender)->getID();
-        auto scene = CCDirector::get()->getRunningScene();
-        LevelSearchLayer* searchLayer = typeinfo_cast<LevelSearchLayer*>(scene->getChildByIDRecursive("LevelSearchLayer"));
-        if (!searchLayer) return;
 
-        CCTextInputNode* input = typeinfo_cast<CCTextInputNode*>(searchLayer->getChildByID("search-bar"));
-        if (input) input->setString(str);
+    // --------------------------------------------------
+    // History management
+    // --------------------------------------------------
 
-        this->onClose(nullptr);
+    static void pushHistory(std::string const& text) {
+        if (text.empty())
+            return;
 
-        pushHistory(str);
-        searchLayer->onSearch(nullptr);
-    }
+        // Ignore whitespace-only searches.
+        if (text.find_first_not_of(" \t\r\n") == std::string::npos)
+            return;
 
-    void onClear(CCObject*) {
-        m_history.clear();
-        saveHistory(m_history);
-        this->refreshList();
-    }
-
-    void onClose(CCObject*) {
-        CCDirector::get()->getTouchDispatcher()->removeDelegate(this);
-        this->removeFromParentAndCleanup(true);
-    }
-
-    void keyBackClicked() override {
-        this->onClose(nullptr);
-    }
-
-public:
-    static SearchHistoryPopup* create(std::vector<std::string> history) {
-        auto ret = new SearchHistoryPopup();
-        if (ret && ret->init(history)) {
-            ret->autorelease();
-            return ret;
-        }
-        CC_SAFE_DELETE(ret);
-        return nullptr;
-    }
-};
-
-class $modify(HistorySearchLayer, LevelSearchLayer) {
-    bool init(int p0) {
-        if (!LevelSearchLayer::init(p0)) return false;
-
-        auto winSize = CCDirector::get()->getWinSize();
-
-        auto menu = CCMenu::create();
-        menu->setID("history-menu"_spr);
-        menu->setPosition({ winSize.width / 2.f - 195.f, winSize.height / 2.f + 115.f });
-
-        auto scene = CCDirector::get()->getRunningScene();
-        this->addChild(menu, scene->getHighestChildZ() + 1);
-
-        auto btn = CCMenuItemSpriteExtra::create(
-            CCSprite::createWithSpriteFrameName("GJ_timeIcon_001.png"), // i mean? do i need to use a custom icon for this?
-            this,
-            menu_selector(HistorySearchLayer::onHistory)
-        );
-        btn->setScale(0.7f);
-        menu->addChild(btn);
-
-        return true;
-    }
-
-    void onHistory(CCObject*) {
         auto history = getHistory();
-        auto p = SearchHistoryPopup::create(history);
-        CCDirector::get()->getRunningScene()->addChild(p, CCDirector::get()->getRunningScene()->getHighestChildZ() + 1);
+
+        // Remove previous occurrence.
+        history.erase(
+            std::remove(history.begin(), history.end(), text),
+            history.end()
+        );
+
+        // Insert newest search first.
+        history.insert(history.begin(), text);
+
+        // Limit history size.
+        if (history.size() > MAX_HISTORY)
+            history.resize(MAX_HISTORY);
+
+        saveHistory(history);
     }
 
-    void onSearch(CCObject* sender) {
-        CCTextInputNode* input = typeinfo_cast<CCTextInputNode*>(this->getChildByID("search-bar"));
-        if (input) {
-            std::string text = input->getString();
-            pushHistory(text);
-        }
-        LevelSearchLayer::onSearch(sender);
+    static void clearHistory() {
+        saveHistory({});
     }
-};
+
+    // --------------------------------------------------
+    // Popup
+    // --------------------------------------------------
+
+    class SearchHistoryPopup : public FLAlertLayer {
+    protected:
+        std::vector<std::string> m_history;
+        CCMenu* m_listMenu = nullptr;
+
+        bool init(std::vector<std::string> history) {
+            if (!FLAlertLayer::init(150))
+                return false;
+
+            m_history = std::move(history);
+
+            auto winSize = CCDirector::get()->getWinSize();
+            auto center = winSize / 2.f;
+
+            // Background
+            auto bg = CCScale9Sprite::create("GJ_square01.png");
+
+            if (!bg)
+                return false;
+
+            bg->setContentSize({300.f, 250.f});
+            bg->setPosition(center);
+            m_mainLayer->addChild(bg);
+
+            // Title
+            auto title = CCLabelBMFont::create(
+                "Search History",
+                "goldFont.fnt"
+            );
+
+            title->setPosition({
+                center.width,
+                center.height + 105.f
+            });
+
+            m_mainLayer->addChild(title);
+
+            // List menu
+            m_listMenu = CCMenu::create();
+            m_listMenu->setPosition({
+                center.width,
+                center.height + 20.f
+            });
+
+            m_mainLayer->addChild(m_listMenu);
+
+            // Close button
+            auto closeSprite = CCSprite::createWithSpriteFrameName(
+                "GJ_closeBtn_001.png"
+            );
+
+            if (closeSprite) {
+                auto closeBtn = CCMenuItemSpriteExtra::create(
+                    closeSprite,
+                    this,
+                    menu_selector(SearchHistoryPopup::onClose)
+                );
+
+                auto closeMenu = CCMenu::create();
+
+                closeMenu->setPosition({
+                    center.width - 140.f,
+                    center.height + 115.f
+                });
+
+                closeMenu->addChild(closeBtn);
+                m_mainLayer->addChild(closeMenu);
+            }
+
+            // Clear button
+            auto clearSprite = ButtonSprite::create(
+                "Clear All",
+                "goldFont.fnt",
+                "GJ_button_01.png",
+                0.8f
+            );
+
+            if (clearSprite) {
+                auto clearBtn = CCMenuItemSpriteExtra::create(
+                    clearSprite,
+                    this,
+                    menu_selector(SearchHistoryPopup::onClear)
+                );
+
+                auto clearMenu = CCMenu::create();
+
+                clearMenu->setPosition({
+                    center.width,
+                    center.height - 100.f
+                });
+
+                clearMenu->addChild(clearBtn);
+                m_mainLayer->addChild(clearMenu);
+            }
+
+            refreshList();
+
+            this->setTouchEnabled(true);
+            this->setKeypadEnabled(true);
+
+            CCDirector::get()->getTouchDispatcher()
+                ->addTargetedDelegate(this, -500, true);
+
+            return true;
+        }
+
+        // --------------------------------------------------
+        // Refresh list
+        // --------------------------------------------------
+
+        void refreshList() {
+            if (!m_listMenu)
+                return;
+
+            m_listMenu->removeAllChildren();
+
+            if (m_history.empty()) {
+                auto emptyLabel = CCLabelBMFont::create(
+                    "No search history",
+                    "bigFont.fnt"
+                );
+
+                if (emptyLabel) {
+                    emptyLabel->setScale(0.55f);
+                    emptyLabel->setColor({180, 180, 180});
+                    emptyLabel->setPosition({0.f, 0.f});
+
+                    m_listMenu->addChild(emptyLabel);
+                }
+
+                return;
+            }
+
+            float y = 65.f;
+
+            size_t count = 0;
+
+            for (auto const& entry : m_history) {
+                if (count >= MAX_VISIBLE)
+                    break;
+
+                // Keep the original query in the button ID.
+                std::string display = entry;
+
+                if (display.size() > MAX_LABEL_LENGTH) {
+                    display.resize(MAX_LABEL_LENGTH - 3);
+                    display += "...";
+                }
+
+                auto label = CCLabelBMFont::create(
+                    display.c_str(),
+                    "bigFont.fnt"
+                );
+
+                if (!label) {
+                    y -= 22.f;
+                    count++;
+                    continue;
+                }
+
+                label->setScale(0.5f);
+
+                auto btn = CCMenuItemSpriteExtra::create(
+                    label,
+                    this,
+                    menu_selector(SearchHistoryPopup::onSelect)
+                );
+
+                btn->setID(entry);
+                btn->setPosition({0.f, y});
+
+                m_listMenu->addChild(btn);
+
+                y -= 22.f;
+                count++;
+            }
+        }
+
+        // --------------------------------------------------
+        // Select search
+        // --------------------------------------------------
+
+        void onSelect(CCObject* sender) {
+            if (!sender)
+                return;
+
+            auto node = static_cast<CCNode*>(sender);
+            auto query = node->getID();
+
+            if (query.empty())
+                return;
+
+            auto scene = CCDirector::get()->getRunningScene();
+
+            if (!scene)
+                return;
+
+            auto searchLayer = typeinfo_cast<LevelSearchLayer*>(
+                scene->getChildByIDRecursive("LevelSearchLayer")
+            );
+
+            if (!searchLayer)
+                return;
+
+            auto input = typeinfo_cast<CCTextInputNode*>(
+                searchLayer->getChildByID("search-bar")
+            );
+
+            if (!input)
+                return;
+
+            input->setString(query);
+
+            // Close popup.
+            onClose(nullptr);
+
+            // Execute search.
+            searchLayer->onSearch(nullptr);
+        }
+
+        // --------------------------------------------------
+        // Clear history
+        // --------------------------------------------------
+
+        void onClear(CCObject*) {
+            m_history.clear();
+
+            clearHistory();
+            refreshList();
+        }
+
+        // --------------------------------------------------
+        // Close popup
+        // --------------------------------------------------
+
+        void onClose(CCObject*) {
+            CCDirector::get()->getTouchDispatcher()
+                ->removeDelegate(this);
+
+            this->removeFromParentAndCleanup(true);
+        }
+
+        void keyBackClicked() override {
+            onClose(nullptr);
+        }
+
+    public:
+        static SearchHistoryPopup* create(
+            std::vector<std::string> history
+        ) {
+            auto ret = new SearchHistoryPopup();
+
+            if (ret && ret->init(std::move(history))) {
+                ret->autorelease();
+                return ret;
+            }
+
+            CC_SAFE_DELETE(ret);
+            return nullptr;
+        }
+    };
+
+    // --------------------------------------------------
+    // LevelSearchLayer Hook
+    // --------------------------------------------------
+
+    class $modify(HistorySearchLayer, LevelSearchLayer) {
+
+        bool init(int p0) {
+            if (!LevelSearchLayer::init(p0))
+                return false;
+
+            auto winSize = CCDirector::get()->getWinSize();
+
+            // History menu
+            auto menu = CCMenu::create();
+
+            menu->setID("history-menu"_spr);
+
+            menu->setPosition({
+                winSize.width / 2.f - 195.f,
+                winSize.height / 2.f + 115.f
+            });
+
+            this->addChild(
+                menu,
+                this->getHighestChildZ() + 1
+            );
+
+            // History icon
+            auto sprite = CCSprite::createWithSpriteFrameName(
+                "GJ_timeIcon_001.png"
+            );
+
+            if (!sprite)
+                return true;
+
+            auto btn = CCMenuItemSpriteExtra::create(
+                sprite,
+                this,
+                menu_selector(HistorySearchLayer::onHistory)
+            );
+
+            btn->setScale(0.7f);
+
+            menu->addChild(btn);
+
+            return true;
+        }
+
+        // Open history popup
+        void onHistory(CCObject*) {
+            auto scene = CCDirector::get()->getRunningScene();
+
+            if (!scene)
+                return;
+
+            auto popup = SearchHistoryPopup::create(getHistory());
+
+            if (popup) {
+                scene->addChild(
+                    popup,
+                    scene->getHighestChildZ() + 1
+                );
+            }
+        }
+
+        // Save searches
+        void onSearch(CCObject* sender) {
+            auto input = typeinfo_cast<CCTextInputNode*>(
+                this->getChildByID("search-bar")
+            );
+
+            if (input) {
+                pushHistory(input->getString());
+            }
+
+            LevelSearchLayer::onSearch(sender);
+        }
+    };
+
+}
