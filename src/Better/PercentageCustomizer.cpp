@@ -44,39 +44,56 @@ class $modify(PctPlayLayer, PlayLayer) {
     }
 
     void restylePercentage() {
-    if (!this) return;
+    log::info("[PercentageCustomizer] 1. Entered");
 
     auto label = m_percentageLabel;
 
+    log::info(
+        "[PercentageCustomizer] 2. Label: {}",
+        static_cast<void*>(label)
+    );
+
     if (!label) {
-        log::warn("[PercentageCustomizer] m_percentageLabel is null");
+        log::warn("[PercentageCustomizer] Label is null");
         return;
     }
+
+    log::info("[PercentageCustomizer] 3. Before getParent");
 
     auto parent = label->getParent();
 
+    log::info(
+        "[PercentageCustomizer] 4. Parent: {}",
+        static_cast<void*>(parent)
+    );
+
     if (!parent) {
-        log::warn("[PercentageCustomizer] Percentage label has no parent");
+        log::warn("[PercentageCustomizer] Parent is null");
         return;
     }
+
+    log::info("[PercentageCustomizer] 5. Before Mod::get");
 
     auto mod = Mod::get();
 
+    log::info(
+        "[PercentageCustomizer] 6. Mod: {}",
+        static_cast<void*>(mod)
+    );
+
     if (!mod) {
-        log::warn("[PercentageCustomizer] Mod instance is null");
+        log::warn("[PercentageCustomizer] Mod is null");
         return;
     }
+
+    log::info("[PercentageCustomizer] 7. Before Fields");
 
     auto f = m_fields.self();
 
-    if (!f) {
-        log::warn("[PercentageCustomizer] Fields are null");
-        return;
-log::info("[PercentageCustomizer] restylePercentage entered");
-log::info("[PercentageCustomizer] label: {}", static_cast<void*>(label));
-log::info("[PercentageCustomizer] parent: {}", static_cast<void*>(parent));
-        
-    }
+    log::info("[PercentageCustomizer] 8. Fields obtained");
+
+    // No realizar ninguna modificación todavía.
+}
 
         float size = static_cast<float>(
             mod->getSettingValue<double>("size")
