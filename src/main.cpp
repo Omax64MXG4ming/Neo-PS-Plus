@@ -280,6 +280,12 @@ class $modify(AltMenuLayer, MenuLayer) {
 $on_game(Loaded) {
 
     // ----------------------------------------------
+    // NEO PS PLUS UPDATER
+    // ----------------------------------------------
+
+    neo::updater::NeoUpdater::checkForUpdates();
+
+    // ----------------------------------------------
     // RESTART KEYBIND
     // ----------------------------------------------
 
