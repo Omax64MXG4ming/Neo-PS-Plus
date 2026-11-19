@@ -77,7 +77,7 @@
             "description": "Capture requests regardless of server",
             "type": "bool",
             "default": true
-        }
+        },
 "physics-title": {
             "type": "title",
             "name": "Physics"
