@@ -181,8 +181,7 @@
             "description": "orbs just fall forever instead of piling up",
             "type": "bool",
             "default": false
-        }
-
+        },
 "percentage-title": {
             "type": "title",
             "name": "Percentage Customizer"
