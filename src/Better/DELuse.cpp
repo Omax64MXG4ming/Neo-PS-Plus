@@ -2,7 +2,7 @@
 #include <Geode/ui/GeodeUI.hpp>
 
 using namespace geode::prelude;
-
+void initializeDELuse() {
 class $modify(LevelInfoLayer) {
   void keyDown(enumKeyCodes key, double timestamp) {
     if (key == enumKeyCodes::KEY_Delete) {
@@ -10,8 +10,9 @@ geode::createQuickPopup("Delete Level", "Are you sure you want to <cr>delete</c>
     [this](auto, bool b) {if (b) {
       GameLevelManager::sharedState()->deleteLevel(m_level); 
 this->onBack(nullptr);}}); return;
-    } 
+     } 
     LevelInfoLayer::keyDown(key, timestamp);
-  }
+   }
+ }
 };
 // edited this after submission: for reviewers: sorry lol unless you wanna use a clanker to make it cleaner but i did love that challenge
