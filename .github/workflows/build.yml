@@ -87,7 +87,7 @@ jobs:
         uses: geode-sdk/build-geode-mod@main
         with:
           target: ${{ matrix.config.target }}
-          sdk: nightly
+          sdk: pre-release
           build-config: Release
           android-ndk-version: 30.0.16248370
           use-cpm-cache: false
