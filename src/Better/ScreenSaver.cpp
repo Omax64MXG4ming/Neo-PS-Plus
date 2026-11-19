@@ -500,3 +500,4 @@ class $modify(LevelEditorLayer) {
         return LevelEditorLayer::init(lvl, unk);
     }
 };
+#endif
