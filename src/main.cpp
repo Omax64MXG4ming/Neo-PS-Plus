@@ -8,6 +8,7 @@
 #include "mainlevels/NeoMainLevelManager.hpp"
 #include "BetterIncludes.hpp"
 #include "updater/NeoUpdater.hpp"
+#ifndef GEODE_IS_IOS
 using namespace geode::prelude;
 
 static bool isReload = false;

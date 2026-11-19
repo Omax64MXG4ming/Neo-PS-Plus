@@ -1,6 +1,6 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/GauntletSelectLayer.hpp>
-
+#ifndef GEODE_IS_IOS
 using namespace geode::prelude;
 
 // why u guys move this on top ever? - user95401

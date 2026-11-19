@@ -1,6 +1,6 @@
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include <Geode/ui/GeodeUI.hpp>
-
+#ifndef GEODE_IS_IOS
 using namespace geode::prelude;
 
 class $modify(LevelInfoLayer) {

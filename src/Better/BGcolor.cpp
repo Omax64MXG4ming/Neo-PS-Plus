@@ -1,4 +1,5 @@
 #include <Geode/modify/CCLayer.hpp>
+#ifndef GEODE_IS_IOS
 using namespace geode::prelude;
 class $modify(CCLayer) {
     void onEnter() override {
