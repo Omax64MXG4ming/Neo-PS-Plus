@@ -92,6 +92,14 @@ jobs:
           android-ndk-version: 30.0.16248370
           use-cpm-cache: false
           combine: true
+- name: Check CC
+shell: bash
+run: |
+grep -R -n -E "createWithKey|updateColors|enableCustomGlowColor|setColors|setGlowOutline|class SimplePlayer" \
+geode-sdk-clone/loader/include \
+geode-sdk-clone/loader/src \
+geode-sdk-clone/loader/impl
+          
 
   # Combine all platforms
   package:
