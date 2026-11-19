@@ -5,6 +5,8 @@ improved Start And Rewards Fix
 
 Added Ultimate LDM Options
 
+Fixed PlayLayer In Game
+
 # 1.0.9
 The color of all backgrounds was adjusted to white (255) 
 
