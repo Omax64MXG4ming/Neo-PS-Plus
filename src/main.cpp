@@ -7,7 +7,7 @@
 #include "ui/NeoBackendLayer.hpp"
 #include "mainlevels/NeoMainLevelManager.hpp"
 #include "BetterIncludes.hpp"
-
+#include "updater/NeoUpdater.hpp"
 using namespace geode::prelude;
 
 static bool isReload = false;
