@@ -1,5 +1,9 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
+#include <filesystem>
+#include <string>
+#include <system_error>
+#include <cstring>
 
 using namespace geode::prelude;
 
@@ -32,12 +36,16 @@ class $modify(PctPlayLayer, PlayLayer) {
 
 		// custom ttf, needs a separate label
 		std::string ttfPath;
-		if (font == "Custom") {
-			auto path = mod->getSettingValue<std::filesystem::path>("custom-font");
-			std::error_code ec;
-			if (!path.empty() && std::filesystem::exists(path, ec)) ttfPath = path.string();
-			else font = "bigFont";
-		}
+	if (font == "Custom") {
+    auto path = mod->getSettingValue<std::string>("custom-font");
+
+    std::error_code ec;
+    if (!path.empty() && std::filesystem::exists(path, ec)) {
+        ttfPath = path;
+    } else {
+        font = "bigFont";
+    }
+}
 
 		CCNode* target = label;
 		CCLabelTTF* ttf = nullptr;
