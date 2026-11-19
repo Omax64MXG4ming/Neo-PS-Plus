@@ -1,3 +1,8 @@
+# 1.0.7
+A type of screensaver was added to the game with settings
+The file paths were changed for more basic and improved performance.
+A use was added to the DEL key on keyboards (:fire:)
+
 # 1.0.6
 Re-added Intercept Layer and Nodes From main.cpp and Fixed Non-Update Status of Request
 
