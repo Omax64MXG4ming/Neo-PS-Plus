@@ -11,12 +11,15 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS" OR IOS)
 elseif (APPLE)
     set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 endif()
-# Next Is for MacOS and Intel
 
 # Hidden symbols
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 project(Template VERSION 1.0.0)
+
+# Disable C++ module scanning
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+set(CMAKE_CXX_MODULE_STD OFF)
 
 # Geode SDK
 if (NOT DEFINED ENV{GEODE_SDK})
@@ -35,7 +38,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 # Mod binary
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
-# get box2d 
+# Box2D
 include(FetchContent)
 
 set(BOX2D_BUILD_TESTBED OFF CACHE BOOL "" FORCE)
@@ -46,13 +49,17 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
     box2d
     GIT_REPOSITORY https://github.com/erincatto/box2d.git
-    GIT_TAG        v2.4.1
-    GIT_SHALLOW    TRUE
+    GIT_TAG v2.4.1
+    GIT_SHALLOW TRUE
 )
+
 FetchContent_MakeAvailable(box2d)
 
 target_link_libraries(${PROJECT_NAME} box2d)
-target_include_directories(${PROJECT_NAME} PRIVATE ${box2d_SOURCE_DIR}/include)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${box2d_SOURCE_DIR}/include
+)
 
 # Geode SDK
 add_subdirectory(
