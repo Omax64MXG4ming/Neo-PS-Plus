@@ -37,7 +37,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
 
 # Mod binary
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
-
+cmake_policy(SET CMP0069 NEW)
 # Box2D
 include(FetchContent)
 
