@@ -1,4 +1,4 @@
-name: Build Neo PS Plus Multi-Platform
+ñname: Build Neo PS Plus Multi-Platform
 
 on:
   workflow_dispatch:
@@ -29,6 +29,10 @@ jobs:
           - name: macOS
             os: macos-latest
             target: MacOS
+
+          - name: iOS
+            os: macos-latest
+            target: iOS
 
     steps:
       - name: Checkout
@@ -88,7 +92,7 @@ jobs:
           android-ndk-version: 30.0.16248370
           use-cpm-cache: false
           combine: true
-          
+
   # Combine all platforms
   package:
     name: Combine Multi-Platform Builds
