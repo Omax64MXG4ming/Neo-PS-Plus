@@ -188,6 +188,7 @@
         "thesillydoggo.blur-api": {
             "version": ">=v1.0.0",
             "required": false
-		}
+		},
+		"geode.node-ids": ">=v1.23.3"
     }
 }
