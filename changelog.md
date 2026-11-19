@@ -1,6 +1,8 @@
 # 1.0.9
 added Better Level Information
+
 The color of all backgrounds was adjusted to white (255) to make the backgrounds more visible
+
 I've added more tips to the loading screen.
 
 # 1.0.8
