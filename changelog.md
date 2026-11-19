@@ -1,6 +1,9 @@
 # 1.1.0
 added Percentage Customizer
+
 Fixed Labels Designer from Tips
+
+improved Start And Rewards Fix
 
 # 1.0.9
 The color of all backgrounds was adjusted to white (255) 
