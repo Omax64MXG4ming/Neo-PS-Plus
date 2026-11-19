@@ -1,12 +1,10 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LoadingLayer.hpp>
-#include <Geode/ui/Popup.hpp>
-#include <Geode/ui/TextInput.hpp>
-#include <Geode/binding/TextArea.hpp>
 #include <random>
+
 using namespace geode::prelude;
 
-// helpers — splits on literal \n in the saved string
+// Loading tips
 static std::vector<std::string> getLines() {
     return {
         "Welcome to Neo PS!",
@@ -50,23 +48,28 @@ static std::vector<std::string> getLines() {
         "Nada más vine a jugar contigo"
     };
 }
+
 // LoadingLayer
 class $modify(MyLoadingLayer, LoadingLayer) {
     bool init(bool refresh) {
         if (!LoadingLayer::init(refresh))
             return false;
 
+        static std::mt19937 rng(std::random_device{}());
+
         auto lines = getLines();
+
         if (lines.empty())
-            return true; // keep RobTop's tips
+            return true;
 
-        // pick a random line
-        int idx = rand() % static_cast<int>(lines.size());
-        auto chosen = lines[idx];
+        std::uniform_int_distribution<size_t> dist(0, lines.size() - 1);
 
-        // m_textArea holds the loading tip so replace its string
+        auto const& chosen = lines[dist(rng)];
+
         if (m_textArea) {
             m_textArea->setString(chosen.c_str());
         }
 
         return true;
+    }
+};
