@@ -1,7 +1,5 @@
 # 1.1.0
-added Percentage Customizer
-
-Fixed Labels Designer from Tips
+added new Labels Designer from Tips
 
 improved Start And Rewards Fix
 
