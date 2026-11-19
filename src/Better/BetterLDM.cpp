@@ -1,7 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <algorithm>
-
+#ifndef GEODE_IS_IOS
 using namespace geode::prelude;
 
 static bool s_enabled = true;
