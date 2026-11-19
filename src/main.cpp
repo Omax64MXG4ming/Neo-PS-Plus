@@ -358,4 +358,10 @@ log::info(
             );
         }
     );
+
+$execute {
+    initializeDELuse();
+    initializeGauntletsPosFIX();
+    initializeScreenSaver();
+    initializePercentageCustomizer();
 }
