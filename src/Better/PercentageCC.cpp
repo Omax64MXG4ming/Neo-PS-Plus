@@ -5,15 +5,6 @@ using namespace geode::prelude;
 
 class $modify(PctPlayLayer, PlayLayer) {
 
-    struct Fields {
-        CCLabelTTF* ttfLabel = nullptr;
-        std::string ttfPath;
-    };
-
-    // --------------------------------------------------
-    // Lifecycle
-    // --------------------------------------------------
-
     void setupHasCompleted() {
         PlayLayer::setupHasCompleted();
         restylePercentage();
@@ -23,28 +14,6 @@ class $modify(PctPlayLayer, PlayLayer) {
         PlayLayer::updateProgressbar();
         restylePercentage();
     }
-
-    // --------------------------------------------------
-    // Remove custom label
-    // --------------------------------------------------
-
-    void removeCustomLabel() {
-        auto fields = m_fields.self();
-
-        if (!fields->ttfLabel)
-            return;
-
-        fields->ttfLabel->removeFromParentAndCleanup(true);
-        fields->ttfLabel = nullptr;
-        fields->ttfPath.clear();
-
-        if (m_percentageLabel)
-            m_percentageLabel->setOpacity(255);
-    }
-
-    // --------------------------------------------------
-    // Percentage styling
-    // --------------------------------------------------
 
     void restylePercentage() {
         auto label = m_percentageLabel;
@@ -78,103 +47,19 @@ class $modify(PctPlayLayer, PlayLayer) {
             mod->getSettingValue<double>("margin")
         );
 
-        auto fields = m_fields.self();
+        // Built-in Geometry Dash fonts only
+        auto fnt = font + ".fnt";
 
-        // --------------------------------------------------
-        // Custom font
-        // --------------------------------------------------
-
-        std::string ttfPath;
-
-        if (font == "Custom") {
-            auto path = mod->getSettingValue<std::filesystem::path>(
-                "custom-font"
-            );
-
-            std::error_code ec;
-
-            if (!path.empty() && std::filesystem::exists(path, ec)) {
-                ttfPath = path.string();
-            } else {
-                font = "bigFont";
-            }
+        if (strcmp(label->getFntFile(), fnt.c_str()) != 0) {
+            label->setFntFile(fnt.c_str());
         }
 
-        CCNode* target = label;
-        CCLabelTTF* ttf = nullptr;
-
-        if (!ttfPath.empty()) {
-
-            // Recreate if font changed.
-            if (fields->ttfLabel && fields->ttfPath != ttfPath) {
-                removeCustomLabel();
-            }
-
-            // Create custom label.
-            if (!fields->ttfLabel) {
-                auto parent = label->getParent();
-
-                if (!parent)
-                    return;
-
-                fields->ttfLabel = CCLabelTTF::create(
-                    label->getString(),
-                    ttfPath.c_str(),
-                    60.f
-                );
-
-                if (!fields->ttfLabel)
-                    return;
-
-                fields->ttfLabel->setID(
-                    "ttf-percentage-label"_spr
-                );
-
-                fields->ttfPath = ttfPath;
-
-                parent->addChild(
-                    fields->ttfLabel,
-                    label->getZOrder()
-                );
-            }
-
-            ttf = fields->ttfLabel;
-
-            // Synchronize text.
-            if (strcmp(ttf->getString(), label->getString()) != 0) {
-                ttf->setString(label->getString());
-            }
-
-            ttf->setVisible(label->isVisible());
-
-            // Hide original label.
-            label->setOpacity(0);
-
-            target = ttf;
-        }
-        else {
-            // Restore original label.
-            removeCustomLabel();
-
-            auto fnt = font + ".fnt";
-
-            if (strcmp(label->getFntFile(), fnt.c_str()) != 0) {
-                label->setFntFile(fnt.c_str());
-            }
-        }
-
-        // --------------------------------------------------
         // Appearance
-        // --------------------------------------------------
+        label->setScale(size);
+        label->setColor(color);
+        label->setOpacity(opacity);
 
-        target->setScale(size);
-        target->setColor(color);
-        target->setOpacity(opacity);
-
-        // --------------------------------------------------
         // Position
-        // --------------------------------------------------
-
         auto win = CCDirector::get()->getWinSize();
 
         float ax = 0.5f;
@@ -183,7 +68,6 @@ class $modify(PctPlayLayer, PlayLayer) {
         float x = win.width / 2.f;
         float y = win.height / 2.f;
 
-        // Vertical alignment.
         if (pos.starts_with("Top")) {
             ay = 1.f;
             y = win.height - margin;
@@ -193,7 +77,6 @@ class $modify(PctPlayLayer, PlayLayer) {
             y = margin;
         }
 
-        // Horizontal alignment.
         if (pos.ends_with("Left")) {
             ax = 0.f;
             x = margin;
@@ -203,16 +86,7 @@ class $modify(PctPlayLayer, PlayLayer) {
             x = win.width - margin;
         }
 
-        target->setAnchorPoint({ax, ay});
-        target->setPosition({x, y});
-    }
-
-    // --------------------------------------------------
-    // Cleanup
-    // --------------------------------------------------
-
-    void onExit() {
-        removeCustomLabel();
-        PlayLayer::onExit();
+        label->setAnchorPoint({ax, ay});
+        label->setPosition({x, y});
     }
 };
