@@ -336,7 +336,7 @@
             "required": false
 		},
 		"geode.node-ids": {
-		 "version": ">=v1.23.3"
+		 "version": ">=v1.23.3",
 		"required": false
     }
   }
