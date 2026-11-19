@@ -1,102 +1,218 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
+
 #include <filesystem>
 #include <string>
-#include <system_error>
 #include <cstring>
+#include <system_error>
 
 using namespace geode::prelude;
+
 class $modify(PctPlayLayer, PlayLayer) {
-	struct Fields {
-		CCLabelTTF* ttfLabel = nullptr;
-		std::string ttfPath;
-	};
 
-	void setupHasCompleted() {
-		PlayLayer::setupHasCompleted();
-		this->restylePercentage();
-	}
+    struct Fields {
+        CCLabelBMFont* bmLabel = nullptr;
+        CCLabelTTF* ttfLabel = nullptr;
+        std::string activeFont;
+    };
 
-	void updateProgressbar() {
-		PlayLayer::updateProgressbar();
-		this->restylePercentage();
-	}
-
-	void restylePercentage() {
-		auto label = m_percentageLabel;
-		if (!label) return;
-		auto mod = Mod::get();
-
-		float size = mod->getSettingValue<double>("size");
-		auto color = mod->getSettingValue<ccColor3B>("color");
-		auto font = mod->getSettingValue<std::string>("font");
-		auto pos = mod->getSettingValue<std::string>("position");
-		auto opacity = static_cast<GLubyte>(mod->getSettingValue<int64_t>("opacity") * 255 / 100);
-
-		// custom ttf, needs a separate label
-		std::string ttfPath;
-	if (font == "Custom") {
-    auto path = mod->getSettingValue<std::string>("custom-font");
-
-    std::error_code ec;
-    if (!path.empty() && std::filesystem::exists(path, ec)) {
-        ttfPath = path;
-    } else {
-        font = "bigFont";
+    void setupHasCompleted() {
+        PlayLayer::setupHasCompleted();
+        this->restylePercentage();
     }
-}
 
-		CCNode* target = label;
-		CCLabelTTF* ttf = nullptr;
-		auto f = m_fields.self();
+    void updateProgressbar() {
+        PlayLayer::updateProgressbar();
+        this->restylePercentage();
+    }
 
-		if (!ttfPath.empty()) {
-			if (f->ttfLabel && f->ttfPath != ttfPath) {
-				f->ttfLabel->removeFromParent();
-				f->ttfLabel = nullptr;
-			}
-			if (!f->ttfLabel) {
-				f->ttfLabel = CCLabelTTF::create(label->getString(), ttfPath.c_str(), 60.f);
-				f->ttfLabel->setID("ttf-percentage-label"_spr);
-				f->ttfPath = ttfPath;
-				label->getParent()->addChild(f->ttfLabel, label->getZOrder());
-			}
-			if (strcmp(f->ttfLabel->getString(), label->getString()) != 0)
-				f->ttfLabel->setString(label->getString());
+    void removeCustomLabel() {
+        auto f = m_fields.self();
 
-			f->ttfLabel->setVisible(label->isVisible());
-			label->setOpacity(0); // original stays in the tree, just invisible
-			target = f->ttfLabel;
-			ttf = f->ttfLabel;
-		} else {
-			if (f->ttfLabel) {
-				f->ttfLabel->removeFromParent();
-				f->ttfLabel = nullptr;
-			}
-			auto fnt = font + ".fnt";
-			if (strcmp(label->getFntFile(), fnt.c_str()) != 0) label->setFntFile(fnt.c_str());
-		}
+        if (f->bmLabel) {
+            f->bmLabel->removeFromParentAndCleanup(true);
+            f->bmLabel = nullptr;
+        }
 
-		target->setScale(size);
-		if (ttf) {
-			ttf->setColor(color);
-			ttf->setOpacity(opacity);
-		} else {
-			label->setColor(color);
-			label->setOpacity(opacity);
-		}
+        if (f->ttfLabel) {
+            f->ttfLabel->removeFromParentAndCleanup(true);
+            f->ttfLabel = nullptr;
+        }
 
-		auto win = CCDirector::get()->getWinSize();
-		float margin = static_cast<float>(mod->getSettingValue<double>("margin"));
-		float ax = 0.5f, ay = 0.5f, x = win.width / 2, y = win.height / 2;
+        f->activeFont.clear();
+    }
 
-		if (pos.starts_with("Top")) { ay = 1.f; y = win.height - margin; }
-		else if (pos.starts_with("Bottom")) { ay = 0.f; y = margin; }
+    void restylePercentage() {
+        auto label = m_percentageLabel;
+        if (!label) return;
 
-		if (pos.ends_with("Left")) { ax = 0.f; x = margin; }
-		else if (pos.ends_with("Right")) { ax = 1.f; x = win.width - margin; }
+        auto parent = label->getParent();
+        if (!parent) return;
 
-		target->setAnchorPoint({ax, ay});
-		target->setPosition({x, y});
-	}
+        auto mod = Mod::get();
+        auto f = m_fields.self();
+
+        float size = static_cast<float>(
+            mod->getSettingValue<double>("size")
+        );
+
+        auto color = mod->getSettingValue<ccColor3B>("color");
+
+        auto font = mod->getSettingValue<std::string>("font");
+        auto pos = mod->getSettingValue<std::string>("position");
+
+        auto opacity = static_cast<GLubyte>(
+            mod->getSettingValue<int64_t>("opacity") * 255 / 100
+        );
+
+        // Determine selected font
+        bool useTTF = false;
+        std::string fontPath;
+
+        if (font == "Custom") {
+            auto path = mod->getSettingValue<std::string>("custom-font");
+
+            std::error_code ec;
+
+            if (!path.empty() && std::filesystem::exists(path, ec) && !ec) {
+                useTTF = true;
+                fontPath = path;
+            } else {
+                font = "bigFont";
+            }
+        }
+
+        if (!useTTF) {
+            fontPath = font + ".fnt";
+        }
+
+        std::string fontKey = (useTTF ? "ttf:" : "bmf:") + fontPath;
+
+        // Recreate label only when the selected font changes
+        if (f->activeFont != fontKey) {
+            CCNode* newLabel = nullptr;
+
+            if (useTTF) {
+                f->ttfLabel = CCLabelTTF::create(
+                    label->getString(),
+                    fontPath.c_str(),
+                    60.f
+                );
+
+                newLabel = f->ttfLabel;
+            } else {
+                f->bmLabel = CCLabelBMFont::create(
+                    label->getString(),
+                    fontPath.c_str()
+                );
+
+                newLabel = f->bmLabel;
+            }
+
+            if (!newLabel) {
+                removeCustomLabel();
+                label->setVisible(true);
+                return;
+            }
+
+            // Remove previous custom label
+            if (useTTF) {
+                if (f->bmLabel) {
+                    f->bmLabel->removeFromParentAndCleanup(true);
+                    f->bmLabel = nullptr;
+                }
+            } else {
+                if (f->ttfLabel) {
+                    f->ttfLabel->removeFromParentAndCleanup(true);
+                    f->ttfLabel = nullptr;
+                }
+            }
+
+            if (useTTF) {
+                f->ttfLabel->setID("ttf-percentage-label"_spr);
+            } else {
+                f->bmLabel->setID("bmf-percentage-label"_spr);
+            }
+
+            parent->addChild(newLabel, label->getZOrder());
+
+            f->activeFont = fontKey;
+        }
+
+        // Synchronize text and visibility
+        CCNode* target = nullptr;
+
+        if (useTTF) {
+            target = f->ttfLabel;
+
+            if (!target) return;
+
+            auto ttf = f->ttfLabel;
+
+            if (strcmp(ttf->getString(), label->getString()) != 0) {
+                ttf->setString(label->getString());
+            }
+        } else {
+            target = f->bmLabel;
+
+            if (!target) return;
+
+            auto bm = f->bmLabel;
+
+            if (strcmp(bm->getString(), label->getString()) != 0) {
+                bm->setString(label->getString());
+            }
+        }
+
+        // Hide original without modifying its BMFont
+        bool originalVisible = label->isVisible();
+
+label->setVisible(false);
+target->setVisible(originalVisible);
+
+        // Apply appearance
+        target->setScale(size);
+
+        if (useTTF) {
+            f->ttfLabel->setColor(color);
+            f->ttfLabel->setOpacity(opacity);
+        } else {
+            f->bmLabel->setColor(color);
+            f->bmLabel->setOpacity(opacity);
+        }
+
+        // Position
+        auto win = CCDirector::get()->getWinSize();
+
+        float margin = static_cast<float>(
+            mod->getSettingValue<double>("margin")
+        );
+
+        float ax = 0.5f;
+        float ay = 0.5f;
+
+        float x = win.width / 2;
+        float y = win.height / 2;
+
+        if (pos.starts_with("Top")) {
+            ay = 1.f;
+            y = win.height - margin;
+        }
+        else if (pos.starts_with("Bottom")) {
+            ay = 0.f;
+            y = margin;
+        }
+
+        if (pos.ends_with("Left")) {
+            ax = 0.f;
+            x = margin;
+        }
+        else if (pos.ends_with("Right")) {
+            ax = 1.f;
+            x = win.width - margin;
+        }
+
+        target->setAnchorPoint({ax, ay});
+        target->setPosition({x, y});
+    }
 };
