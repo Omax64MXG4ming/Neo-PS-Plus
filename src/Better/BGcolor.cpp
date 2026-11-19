@@ -83,3 +83,4 @@ class $modify(CCLayer) {
         }
     }
 };
+#endif

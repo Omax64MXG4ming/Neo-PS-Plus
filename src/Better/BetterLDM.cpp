@@ -132,3 +132,4 @@ class $modify(PlayLayer) {
 		PlayLayer::onQuit();
 	}
 };
+#endif

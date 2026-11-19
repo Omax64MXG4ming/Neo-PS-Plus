@@ -73,3 +73,4 @@ class $modify(MyLoadingLayer, LoadingLayer) {
         return true;
     }
 };
+#endif

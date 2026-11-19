@@ -23,3 +23,4 @@ class $modify(GauntletSelectLayerFix, GauntletSelectLayer) {
         );
     }
 };
+#endif
