@@ -24,3 +24,4 @@ class $modify(LevelInfoLayer) {
         LevelInfoLayer::keyDown(key, timestamp);
     }
 };
+#endif
