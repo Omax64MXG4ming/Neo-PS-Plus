@@ -6,8 +6,6 @@
 #include <cstring>
 
 using namespace geode::prelude;
-
-void initializePercentageCustomizer() {
 class $modify(PctPlayLayer, PlayLayer) {
 	struct Fields {
 		CCLabelTTF* ttfLabel = nullptr;
