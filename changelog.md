@@ -1,9 +1,9 @@
 # 1.0.9
-added Better Level Information
+The color of all backgrounds was adjusted to white (255) 
 
-The color of all backgrounds was adjusted to white (255) to make the backgrounds more visible
+Added Custom Search History 
 
-I've added more tips to the loading screen.
+I've added more tips to the loading screen. 
 
 # 1.0.8
 added an Auto Updater for The Mod with FlayerAlert in MenuLayer
