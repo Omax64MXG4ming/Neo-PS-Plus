@@ -379,10 +379,7 @@ namespace neo::searchHistory {
                 winSize.height / 2.f + 115.f
             });
 
-            this->addChild(
-                menu,
-                this->getHighestChildZ() + 1
-            );
+this->addChild(menu, 100);
 
             // History icon
             auto sprite = CCSprite::createWithSpriteFrameName(
