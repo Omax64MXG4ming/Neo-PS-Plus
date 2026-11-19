@@ -6,7 +6,7 @@
 #include <string>
 #include <algorithm>
 #include <fstream>
-
+#ifndef GEODE_IS_IOS
 using namespace geode::prelude;
 
 namespace neo::searchHistory {
