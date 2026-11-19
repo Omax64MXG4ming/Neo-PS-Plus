@@ -3,6 +3,8 @@ added new Labels Designer from Tips
 
 improved Start And Rewards Fix
 
+Added Ultimate LDM Options
+
 # 1.0.9
 The color of all backgrounds was adjusted to white (255) 
 
