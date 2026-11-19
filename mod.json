@@ -91,7 +91,7 @@
             "type": "title",
             "name": "ScreenSaver Options"
         },
-"physics-title": {
+       "screen-physics-title": {
             "type": "title",
             "name": "Physics"
         },
@@ -120,7 +120,7 @@
                 "arrows": true
             }
         },
-        "orbs-title": {
+        "screen-orbs-title": {
             "type": "title",
             "name": "orbs"
         },
@@ -137,7 +137,7 @@
                 "arrow-step": 10
             }
         },
-        "cube-title": {
+        "screen-cube-title": {
             "type": "title",
             "name": "Player Cube"
         },
@@ -153,7 +153,7 @@
                 "arrows": true
             }
         },
-        "bg-title": {
+        "screen-bg-title": {
             "type": "title",
             "name": "Background"
         },
@@ -191,7 +191,7 @@
             "default": "stretch",
             "one-of": ["stretch", "zoom"]
         },
-        "misc-title": {
+        "screen-misc-title": {
             "type": "title",
             "name": "Misc"
         },
