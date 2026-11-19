@@ -12,7 +12,7 @@
     "description": "An Mod For Neo PS, Uses Backend and More Inspector",
 		"links": {
 		"source": "https://github.com/Omax64MXG4ming/Neo-PS-Plus",
-	    "discord": "https://discord.gg/TdB33cAyMn"
+	    "community": "https://discord.gg/TdB33cAyMn"
 	},
 	"issues": {
 		"url": "https://github.com/Omax64MXG4ming/neo-android-launcher/issues",
@@ -91,10 +91,7 @@
             "type": "title",
             "name": "ScreenSaver Options"
         },
-       "screen-physics-title": {
-            "type": "title",
-            "name": "Physics"
-        },
+    
         "wait-time": {
             "name": "Idle Time (seconds)",
             "description": "how long till screensaver starts",
@@ -120,10 +117,6 @@
                 "arrows": true
             }
         },
-        "screen-orbs-title": {
-            "type": "title",
-            "name": "orbs"
-        },
         "item-count": {
             "name": "Orb Count",
             "description": "how many orbs spawn per cycle",
@@ -137,10 +130,6 @@
                 "arrow-step": 10
             }
         },
-        "screen-cube-title": {
-            "type": "title",
-            "name": "Player Cube"
-        },
         "player-chance": {
             "name": "Cube Chance (%)",
             "description": "chance your cube shows up too",
@@ -152,10 +141,6 @@
                 "slider": true,
                 "arrows": true
             }
-        },
-        "screen-bg-title": {
-            "type": "title",
-            "name": "Background"
         },
         "background-mode": {
             "name": "Background Type",
@@ -190,10 +175,6 @@
             "type": "string",
             "default": "stretch",
             "one-of": ["stretch", "zoom"]
-        },
-        "screen-misc-title": {
-            "type": "title",
-            "name": "Misc"
         },
         "infinite-fall": {
             "name": "No Ground (Infinite Fall)",
