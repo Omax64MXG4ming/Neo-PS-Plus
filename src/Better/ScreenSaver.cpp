@@ -400,7 +400,6 @@ public:
 };
 
 
-void initializeScreenSaver() {
 
 const int ScreensaverLayer::orbIds[11] = {36, 84, 141, 1022, 1330, 1333, 1704, 1751, 3004, 3027, 1594};
 const float ScreensaverLayer::orbSizes[11] = {32.3f, 33.2f, 33.6f, 31.96f, 36.5f, 34.9f, 41.f, 41.f, 41.f, 39.4f, 30.8f};
