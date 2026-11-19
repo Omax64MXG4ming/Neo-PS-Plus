@@ -4,116 +4,92 @@
 using namespace geode::prelude;
 
 class $modify(PctPlayLayer, PlayLayer) {
+	struct Fields {
+		CCLabelTTF* ttfLabel = nullptr;
+		std::string ttfPath;
+	};
 
-    void setupHasCompleted() {
-        PlayLayer::setupHasCompleted();
+	void setupHasCompleted() {
+		PlayLayer::setupHasCompleted();
+		this->restylePercentage();
+	}
 
-        log::info("[PercentageCustomizer] setupHasCompleted");
+	void updateProgressbar() {
+		PlayLayer::updateProgressbar();
+		this->restylePercentage();
+	}
 
-        this->restylePercentage();
-    }
+	void restylePercentage() {
+		auto label = m_percentageLabel;
+		if (!label) return;
+		auto mod = Mod::get();
 
-    void updateProgressbar() {
-        PlayLayer::updateProgressbar();
+		float size = mod->getSettingValue<double>("size");
+		auto color = mod->getSettingValue<ccColor3B>("color");
+		auto font = mod->getSettingValue<std::string>("font");
+		auto pos = mod->getSettingValue<std::string>("position");
+		auto opacity = static_cast<GLubyte>(mod->getSettingValue<int64_t>("opacity") * 255 / 100);
 
-        this->restylePercentage();
-    }
+		// custom ttf, needs a separate label
+		std::string ttfPath;
+		if (font == "Custom") {
+			auto path = mod->getSettingValue<std::filesystem::path>("custom-font");
+			std::error_code ec;
+			if (!path.empty() && std::filesystem::exists(path, ec)) ttfPath = path.string();
+			else font = "bigFont";
+		}
 
-    void restylePercentage() {
-        log::info("[PercentageCustomizer] 1. Entered");
+		CCNode* target = label;
+		CCLabelTTF* ttf = nullptr;
+		auto f = m_fields.self();
 
-        // Obtener el porcentaje original.
-        auto label = m_percentageLabel;
+		if (!ttfPath.empty()) {
+			if (f->ttfLabel && f->ttfPath != ttfPath) {
+				f->ttfLabel->removeFromParent();
+				f->ttfLabel = nullptr;
+			}
+			if (!f->ttfLabel) {
+				f->ttfLabel = CCLabelTTF::create(label->getString(), ttfPath.c_str(), 60.f);
+				f->ttfLabel->setID("ttf-percentage-label"_spr);
+				f->ttfPath = ttfPath;
+				label->getParent()->addChild(f->ttfLabel, label->getZOrder());
+			}
+			if (strcmp(f->ttfLabel->getString(), label->getString()) != 0)
+				f->ttfLabel->setString(label->getString());
 
-        log::info(
-            "[PercentageCustomizer] 2. Label: {}",
-            static_cast<void*>(label)
-        );
+			f->ttfLabel->setVisible(label->isVisible());
+			label->setOpacity(0); // original stays in the tree, just invisible
+			target = f->ttfLabel;
+			ttf = f->ttfLabel;
+		} else {
+			if (f->ttfLabel) {
+				f->ttfLabel->removeFromParent();
+				f->ttfLabel = nullptr;
+			}
+			auto fnt = font + ".fnt";
+			if (strcmp(label->getFntFile(), fnt.c_str()) != 0) label->setFntFile(fnt.c_str());
+		}
 
-        if (!label) {
-            log::warn("[PercentageCustomizer] Percentage label is null");
-            return;
-        }
+		target->setScale(size);
+		if (ttf) {
+			ttf->setColor(color);
+			ttf->setOpacity(opacity);
+		} else {
+			label->setColor(color);
+			label->setOpacity(opacity);
+		}
 
-        // Obtener el padre.
-        auto parent = label->getParent();
+		auto win = CCDirector::get()->getWinSize();
+		float margin = static_cast<float>(mod->getSettingValue<double>("margin"));
+		float ax = 0.5f, ay = 0.5f, x = win.width / 2, y = win.height / 2;
 
-        log::info(
-            "[PercentageCustomizer] 3. Parent: {}",
-            static_cast<void*>(parent)
-        );
+		if (pos.starts_with("Top")) { ay = 1.f; y = win.height - margin; }
+		else if (pos.starts_with("Bottom")) { ay = 0.f; y = margin; }
 
-        if (!parent) {
-            log::warn("[PercentageCustomizer] Label parent is null");
-            return;
-        }
+		if (pos.ends_with("Left")) { ax = 0.f; x = margin; }
+		else if (pos.ends_with("Right")) { ax = 1.f; x = win.width - margin; }
 
-        // Obtener la instancia del mod.
-        auto mod = Mod::get();
-
-        if (!mod) {
-            log::error("[PercentageCustomizer] Mod instance is null");
-            return;
-        }
-
-        log::info("[PercentageCustomizer] 4. Mod obtained");
-
-        // Leer configuraciones.
-        float size = static_cast<float>(
-            mod->getSettingValue<double>("size")
-        );
-
-        auto color = mod->getSettingValue<ccColor3B>("color");
-
-        auto opacity = static_cast<GLubyte>(
-            mod->getSettingValue<int64_t>("opacity") * 255 / 100
-        );
-
-        auto pos = mod->getSettingValue<std::string>("position");
-
-        log::info("[PercentageCustomizer] 5. Settings obtained");
-
-        // Aplicar apariencia.
-        label->setScale(size);
-        label->setColor(color);
-        label->setOpacity(opacity);
-
-        log::info("[PercentageCustomizer] 6. Appearance applied");
-
-        // Calcular posición.
-        auto win = CCDirector::get()->getWinSize();
-
-        float margin = static_cast<float>(
-            mod->getSettingValue<double>("margin")
-        );
-
-        float ax = 0.5f;
-        float ay = 0.5f;
-
-        float x = win.width / 2;
-        float y = win.height / 2;
-
-        if (pos.starts_with("Top")) {
-            ay = 1.f;
-            y = win.height - margin;
-        }
-        else if (pos.starts_with("Bottom")) {
-            ay = 0.f;
-            y = margin;
-        }
-
-        if (pos.ends_with("Left")) {
-            ax = 0.f;
-            x = margin;
-        }
-        else if (pos.ends_with("Right")) {
-            ax = 1.f;
-            x = win.width - margin;
-        }
-
-        label->setAnchorPoint({ax, ay});
-        label->setPosition({x, y});
-
-        log::info("[PercentageCustomizer] 7. Position applied");
-    }
+		target->setAnchorPoint({ax, ay});
+		target->setPosition({x, y});
+	}
 };
