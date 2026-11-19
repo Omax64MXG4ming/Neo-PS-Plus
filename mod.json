@@ -1,5 +1,5 @@
 {
-    "geode": "6.0.0-alpha.2",
+    "geode": "6.0.0-alpha.3",
     "gd": {
         "win": "2.2091",
 		"android": "2.2091",
@@ -8,7 +8,7 @@
     },
     "id": "omarstudios.neo",
     "name": "Neo PS Plus",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "developer": "Omar Studios",
     "description": "An Mod For Neo PS, Uses Backend and More Inspector",
 		"links": {
