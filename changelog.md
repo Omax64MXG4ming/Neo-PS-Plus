@@ -1,3 +1,8 @@
+# 1.1.1
+Updated the Updater
+
+fixex the fix of the fix
+
 # 1.1.0
 added new Labels Designer from Tips
 
