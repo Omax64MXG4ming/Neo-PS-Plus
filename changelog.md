@@ -1,3 +1,6 @@
+# 1.1.0
+added Percentage Customizer
+
 # 1.0.9
 The color of all backgrounds was adjusted to white (255) 
 
