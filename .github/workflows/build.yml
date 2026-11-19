@@ -1,4 +1,4 @@
-ñname: Build Neo PS Plus Multi-Platform
+name: Build Neo PS Plus Multi-Platform
 
 on:
   workflow_dispatch:
