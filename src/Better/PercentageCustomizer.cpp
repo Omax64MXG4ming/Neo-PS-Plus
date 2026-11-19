@@ -28,6 +28,7 @@ class $modify(PctPlayLayer, PlayLayer) {
 
     void removeCustomLabel() {
         auto f = m_fields.self();
+        
 
         if (f->bmLabel) {
             f->bmLabel->removeFromParentAndCleanup(true);
@@ -43,14 +44,39 @@ class $modify(PctPlayLayer, PlayLayer) {
     }
 
     void restylePercentage() {
-        auto label = m_percentageLabel;
-        if (!label) return;
+    if (!this) return;
 
-        auto parent = label->getParent();
-        if (!parent) return;
+    auto label = m_percentageLabel;
 
-        auto mod = Mod::get();
-        auto f = m_fields.self();
+    if (!label) {
+        log::warn("[PercentageCustomizer] m_percentageLabel is null");
+        return;
+    }
+
+    auto parent = label->getParent();
+
+    if (!parent) {
+        log::warn("[PercentageCustomizer] Percentage label has no parent");
+        return;
+    }
+
+    auto mod = Mod::get();
+
+    if (!mod) {
+        log::warn("[PercentageCustomizer] Mod instance is null");
+        return;
+    }
+
+    auto f = m_fields.self();
+
+    if (!f) {
+        log::warn("[PercentageCustomizer] Fields are null");
+        return;
+log::info("[PercentageCustomizer] restylePercentage entered");
+log::info("[PercentageCustomizer] label: {}", static_cast<void*>(label));
+log::info("[PercentageCustomizer] parent: {}", static_cast<void*>(parent));
+        
+    }
 
         float size = static_cast<float>(
             mod->getSettingValue<double>("size")
