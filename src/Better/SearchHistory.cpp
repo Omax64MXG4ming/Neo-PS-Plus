@@ -8,19 +8,28 @@
 using namespace geode::prelude;
 
 std::vector<std::string> getHistory() {
-    auto path = Mod::get()->getSaveDir() / "history.txt";
+    auto path = (Mod::get()->getSaveDir() / "history.txt").string();
+
     std::vector<std::string> history;
     std::ifstream file(path);
+
     std::string line;
     while (std::getline(file, line)) {
-        if (!line.empty()) history.push_back(line);
+        if (!line.empty())
+            history.push_back(line);
     }
+
     return history;
 }
 
 void saveHistory(std::vector<std::string> const& history) {
-    auto path = Mod::get()->getSaveDir() / "history.txt";
+    auto path = (Mod::get()->getSaveDir() / "history.txt").string();
+
     std::ofstream file(path);
+
+    if (!file.is_open())
+        return;
+
     for (auto const& str : history) {
         file << str << "\n";
     }
