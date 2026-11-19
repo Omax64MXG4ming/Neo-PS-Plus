@@ -1,3 +1,7 @@
+# 1.0.8
+added an Auto Updater for The Mod with FlayerAlert in MenuLayer
+optimized performance with hooks
+
 # 1.0.7
 A type of screensaver was added to the game with settings
 The file paths were changed for more basic and improved performance.
