@@ -1,4 +1,3 @@
-
 cmake_minimum_required(VERSION 3.21)
 
 # C++23
@@ -12,6 +11,7 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS" OR IOS)
 elseif (APPLE)
     set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 endif()
+# Next Is for MacOS and Intel
 
 # Hidden symbols
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
