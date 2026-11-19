@@ -5,6 +5,7 @@
 #include <Geode/modify/CCTouchDispatcher.hpp>
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include "../BlurAPI.hpp"
+
 #include <box2d/box2d.h>
 
 using namespace geode::prelude;
@@ -75,22 +76,41 @@ class ScreensaverLayer : public CCLayerColor {
 
     // bg image load
     void loadBackgroundImage() {
-        if(bgSprite) {
-            bgSprite->removeFromParentAndCleanup(true);
-            bgSprite = nullptr;
-        }
-        if(bgType != "image") return;
-        auto imgPath = Mod::get()->getSettingValue<std::filesystem::path>("image-path");
-        if(imgPath.empty() || !std::filesystem::exists(imgPath)) return;
-        auto tex = CCTextureCache::get()->addImage(imgPath.string().c_str(), false);
-        if(!tex) return;
-        bgSprite = CCSprite::createWithTexture(tex);
-        if(!bgSprite) return;
-        bgSprite->setAnchorPoint({0.5f, 0.5f});
-        bgSprite->setPosition({winSize.width/2, winSize.height/2});
-        fitBackgroundImage();
-        this->addChild(bgSprite, -1);
+    if (bgSprite) {
+        bgSprite->removeFromParentAndCleanup(true);
+        bgSprite = nullptr;
     }
+
+    if (bgType != "image") return;
+
+    auto imgPathStr = Mod::get()->getSettingValue<std::string>("image-path");
+    if (imgPathStr.empty()) return;
+
+    std::filesystem::path imgPath(imgPathStr);
+    std::error_code ec;
+
+    if (!std::filesystem::exists(imgPath, ec) || ec) return;
+
+    auto tex = CCTextureCache::get()->addImage(
+        imgPath.string().c_str(),
+        false
+    );
+
+    if (!tex) return;
+
+    bgSprite = CCSprite::createWithTexture(tex);
+    if (!bgSprite) return;
+
+    bgSprite->setAnchorPoint({0.5f, 0.5f});
+    bgSprite->setPosition({
+        winSize.width / 2,
+        winSize.height / 2
+    });
+
+    fitBackgroundImage();
+    this->addChild(bgSprite, -1);
+}
+
     void fitBackgroundImage() {
         if(!bgSprite) return;
         auto sz = bgSprite->getTextureRect().size;
@@ -367,8 +387,10 @@ public:
     }
     void keyDown(enumKeyCodes, double) override { kill(); }
     void keyBackClicked() override { kill(); }
-    void scrollWheel(float, float) override { kill(); }
-
+    bool scrollWheel(float, float) override {
+    kill();
+    return true;
+}
     ~ScreensaverLayer() override {
         if(bgType == "blur")
             BlurAPI::removeBlur(this);
