@@ -1,7 +1,9 @@
 #include <Geode/Geode.hpp>
 using namespace geode::prelude;
 
-#include <Geode/modify/GauntletSelectLayer.hpp>//why u guys move this on top ever? - user95401
+#include <Geode/modify/GauntletSelectLayer.hpp>
+//why u guys move this on top ever? - user95401
+void initializeGauntletsPosFIX() {
 class $modify(GauntletSelectLayerFix, GauntletSelectLayer) {
     $override void setupGauntlets() {
         GauntletSelectLayer::setupGauntlets();
@@ -13,5 +15,5 @@ class $modify(GauntletSelectLayerFix, GauntletSelectLayer) {
                 return true;
             }
         );
-    };
+    }
 };
