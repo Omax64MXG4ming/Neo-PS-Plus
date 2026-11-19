@@ -6,12 +6,13 @@
 		"mac": "2.2091"
     },
     "id": "omarstudios.neo",
-    "name": "NeoPS Plus",
+    "name": "Neo PS Plus",
     "version": "1.0.7",
     "developer": "Omar Studios",
     "description": "An Mod For Neo PS, Uses Backend and More Inspector",
 		"links": {
-		"source": "https://github.com/Omax64MXG4ming/Neo-PS-Plus"
+		"source": "https://github.com/Omax64MXG4ming/Neo-PS-Plus",
+	    "discord": "https://discord.gg/TdB33cAyMn"
 	},
 	"issues": {
 		"url": "https://github.com/Omax64MXG4ming/neo-android-launcher/issues",
@@ -187,11 +188,9 @@
             "description": "orbs just fall forever instead of piling up",
             "type": "bool",
             "default": false
-        }
+        },
 
-
-
-"size": {
+      "size": {
 	        "label": "Percentage Custmizer",
 			"type": "float",
 			"name": "Size",
