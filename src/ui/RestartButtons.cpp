@@ -2,7 +2,8 @@
 
 #include <Geode/binding/LevelEditorLayer.hpp>
 #include <Geode/loader/SettingV3.hpp>
-
+#ifndef GEODE_IS_IOS
+#include <Geode/binding/GameManager.hpp>
 using namespace geode::prelude;
 
 namespace neo::ui {
@@ -230,3 +231,4 @@ void RestartButtons::registerKeybinds() {
     );
   }
 }
+#endif
