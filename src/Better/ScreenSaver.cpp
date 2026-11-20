@@ -5,13 +5,13 @@
 #include <Geode/modify/LevelEditorLayer.hpp>
 #include <Geode/modify/CCTouchDispatcher.hpp>
 
-#ifndef GEODE_IS_IOS
+#if defined(GEODE_IS_WINDOWS) || defined(GEODE_IS_MACOS)
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #include <Geode/binding/GameObject.hpp>
 #include <Geode/binding/SimplePlayer.hpp>
 #endif
 
-#include "../BlurAPI.hpp"
+#include "BlurAPI.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -19,54 +19,66 @@
 #include <ctime>
 #include <filesystem>
 #include <string>
+#include <system_error>
 #include <vector>
 
 using namespace geode::prelude;
 using namespace cocos2d;
 
+// --------------------------------------------------
+// Constants
+// --------------------------------------------------
+
 namespace {
 
 constexpr float PI = 3.14159265358979323846f;
 constexpr float FIXED_STEP = 1.f / 60.f;
-constexpr float GRAVITY = 1176.f;
-constexpr float RESTITUTION = 0.5f;
-constexpr float FRICTION = 0.65f;
 
-struct Vec {
+constexpr float GRAVITY = 9.8f * 3.f * 40.f;
+constexpr float RESTITUTION = 0.5f;
+constexpr float FRICTION = 0.7f;
+
+constexpr int SOLVER_ITERATIONS = 5;
+
+// --------------------------------------------------
+// Vector
+// --------------------------------------------------
+
+struct Vec2 {
     float x = 0.f;
     float y = 0.f;
 };
 
-static Vec add(Vec a, Vec b) {
+static Vec2 vecAdd(Vec2 a, Vec2 b) {
     return {a.x + b.x, a.y + b.y};
 }
 
-static Vec sub(Vec a, Vec b) {
+static Vec2 vecSub(Vec2 a, Vec2 b) {
     return {a.x - b.x, a.y - b.y};
 }
 
-static Vec mul(Vec a, float s) {
-    return {a.x * s, a.y * s};
+static Vec2 vecMul(Vec2 a, float value) {
+    return {a.x * value, a.y * value};
 }
 
-static float dot(Vec a, Vec b) {
+static float vecDot(Vec2 a, Vec2 b) {
     return a.x * b.x + a.y * b.y;
 }
 
-static float length(Vec a) {
-    return std::sqrt(dot(a, a));
+static float vecLength(Vec2 a) {
+    return std::sqrt(vecDot(a, a));
 }
 
-static Vec normalize(Vec a) {
-    float l = length(a);
+static Vec2 vecNormalize(Vec2 a) {
+    float len = vecLength(a);
 
-    if (l <= 0.0001f)
+    if (len <= 0.00001f)
         return {1.f, 0.f};
 
-    return mul(a, 1.f / l);
+    return vecMul(a, 1.f / len);
 }
 
-static Vec rotate(Vec p, float angle) {
+static Vec2 vecRotate(Vec2 p, float angle) {
     float c = std::cos(angle);
     float s = std::sin(angle);
 
@@ -76,17 +88,18 @@ static Vec rotate(Vec p, float angle) {
     };
 }
 
-static Vec perpendicular(Vec p) {
-    return {-p.y, p.x};
+static float cross(Vec2 a, Vec2 b) {
+    return a.x * b.y - a.y * b.x;
 }
 
-static float clampf(float v, float a, float b) {
-    return std::max(a, std::min(v, b));
+static float clampValue(float value, float min, float max) {
+    return std::max(min, std::min(value, max));
 }
 
 static float randomFloat(float min, float max) {
     return min + (max - min) *
-        (static_cast<float>(std::rand()) / RAND_MAX);
+        (static_cast<float>(std::rand()) /
+         static_cast<float>(RAND_MAX));
 }
 
 } // namespace
@@ -106,28 +119,32 @@ static bool pauseOpen = false;
 struct PhysItem {
     CCNode* vis = nullptr;
 
-    Vec position;
-    Vec velocity;
+    Vec2 position;
+    Vec2 velocity;
 
     float radius = 16.f;
+
     float angle = 0.f;
     float angularVelocity = 0.f;
+
+    float invMass = 1.f;
+    float invInertia = 0.f;
 
     int itemType = -1;
 
     bool isPlayerCube = false;
     bool isBox = false;
-
-    float invMass = 1.f;
 };
 
 // --------------------------------------------------
-// Screensaver
+// Screensaver layer
 // --------------------------------------------------
 
 class ScreensaverLayer : public CCLayerColor {
 
     std::vector<PhysItem> items;
+
+    // Timing
 
     float elapsed = 0.f;
     int itemsMade = 0;
@@ -135,7 +152,7 @@ class ScreensaverLayer : public CCLayerColor {
     bool playerIn = false;
     bool draining = false;
     bool filled = false;
-    bool floorEnabled = true;
+
     float physicsLag = 0.f;
     float pauseBeforeDrain = 0.f;
     float nextSpawn = 0.f;
@@ -147,6 +164,8 @@ class ScreensaverLayer : public CCLayerColor {
     int playerChance = 0;
 
     bool allowDrop = false;
+    bool floorEnabled = true;
+
     int spawnTicks = 1;
 
     // Background
@@ -172,57 +191,75 @@ class ScreensaverLayer : public CCLayerColor {
     static const float orbSizes[11];
 
     // --------------------------------------------------
-    // Visual fallback
+    // Shape projection
     // --------------------------------------------------
 
-    CCNode* createFallbackVisual(
-        float radius,
-        bool player,
-        int orbIdx
-    ) {
+    float projectedRadius(
+        const PhysItem& item,
+        Vec2 axis
+    ) const {
 
-        ccColor3B color;
+        if (!item.isBox)
+            return item.radius;
 
-        if (player) {
-            color = ccc3(60, 170, 255);
-        } else {
-            static const ccColor3B colors[11] = {
-                {255, 190, 50},
-                {255, 90, 90},
-                {80, 220, 140},
-                {160, 100, 255},
-                {255, 120, 220},
-                {80, 220, 255},
-                {255, 220, 80},
-                {120, 160, 255},
-                {255, 140, 70},
-                {160, 255, 100},
-                {220, 220, 220}
-            };
-
-            color = colors[
-                std::max(0, std::min(orbIdx, 10))
-            ];
-        }
-
-        float size = radius * 2.f;
-
-        auto visual = CCLayerColor::create(
-            ccc4(color.r, color.g, color.b, 255),
-            size,
-            size
+        Vec2 right = vecRotate(
+            {1.f, 0.f},
+            item.angle
         );
 
-        if (!visual)
-            return nullptr;
+        Vec2 up = vecRotate(
+            {0.f, 1.f},
+            item.angle
+        );
 
-        visual->setAnchorPoint({0.5f, 0.5f});
-
-        return visual;
+        return item.radius * (
+            std::abs(vecDot(right, axis)) +
+            std::abs(vecDot(up, axis))
+        );
     }
 
     // --------------------------------------------------
-    // Background
+    // Inertia
+    // --------------------------------------------------
+
+    void calculateMass(PhysItem& item) {
+
+        // Same approximate density for every object.
+
+        float mass = PI * item.radius * item.radius;
+
+        if (item.isBox)
+            mass = 4.f * item.radius * item.radius;
+
+        mass = std::max(mass, 1.f);
+
+        item.invMass = 1.f / mass;
+
+        float inertia = 0.f;
+
+        if (item.isBox) {
+
+            float side = item.radius * 2.f;
+
+            inertia = mass * (
+                side * side + side * side
+            ) / 12.f;
+
+        } else {
+
+            inertia = 0.5f *
+                mass *
+                item.radius *
+                item.radius;
+        }
+
+        item.invInertia = inertia > 0.0001f
+            ? 1.f / inertia
+            : 0.f;
+    }
+
+    // --------------------------------------------------
+    // Background image
     // --------------------------------------------------
 
     void loadBackgroundImage() {
@@ -235,20 +272,20 @@ class ScreensaverLayer : public CCLayerColor {
         if (bgType != "image")
             return;
 
-        auto imgPathStr =
-            Mod::get()->getSettingValue<std::string>(
+        auto imgPath =
+            Mod::get()->getSettingValue<std::filesystem::path>(
                 "image-path"
             );
 
-        if (imgPathStr.empty())
-            return;
-
-        std::filesystem::path imgPath(imgPathStr);
-
         std::error_code ec;
 
-        if (!std::filesystem::exists(imgPath, ec) || ec)
+        if (
+            imgPath.empty() ||
+            !std::filesystem::exists(imgPath, ec) ||
+            ec
+        ) {
             return;
+        }
 
         auto tex = CCTextureCache::get()->addImage(
             imgPath.string().c_str(),
@@ -280,39 +317,90 @@ class ScreensaverLayer : public CCLayerColor {
         if (!bgSprite)
             return;
 
-        auto sz = bgSprite->getTextureRect().size;
+        auto size = bgSprite->getTextureRect().size;
 
-        if (sz.width <= 0.f || sz.height <= 0.f)
+        if (size.width <= 0.f || size.height <= 0.f)
             return;
 
-        float sx = winSize.width / sz.width;
-        float sy = winSize.height / sz.height;
+        float sx = winSize.width / size.width;
+        float sy = winSize.height / size.height;
 
         if (bgFit == "stretch") {
+
             bgSprite->setScaleX(sx);
             bgSprite->setScaleY(sy);
+
         } else {
+
             bgSprite->setScale(std::max(sx, sy));
         }
 
         bgSprite->setOpacity(
-            static_cast<GLubyte>(bgAlpha)
+            static_cast<GLubyte>(
+                clampValue(static_cast<float>(bgAlpha), 0.f, 255.f)
+            )
         );
     }
 
     // --------------------------------------------------
-    // Item visual
+    // Fallback visual
+    // --------------------------------------------------
+
+    CCNode* createFallbackVisual(
+        float radius,
+        bool player,
+        int orbIdx
+    ) {
+
+        static const ccColor3B orbColors[11] = {
+            {255, 190, 50},
+            {255, 90, 90},
+            {80, 220, 140},
+            {160, 100, 255},
+            {255, 120, 220},
+            {80, 220, 255},
+            {255, 220, 80},
+            {120, 160, 255},
+            {255, 140, 70},
+            {160, 255, 100},
+            {220, 220, 220}
+        };
+
+        ccColor3B color = player
+            ? ccc3(70, 170, 255)
+            : orbColors[
+                std::max(0, std::min(orbIdx, 10))
+            ];
+
+        float size = radius * 2.f;
+
+        auto visual = CCLayerColor::create(
+            ccc4(color.r, color.g, color.b, 255),
+            size,
+            size
+        );
+
+        if (!visual)
+            return nullptr;
+
+        visual->setAnchorPoint({0.5f, 0.5f});
+
+        return visual;
+    }
+
+    // --------------------------------------------------
+    // Create visual
     // --------------------------------------------------
 
     CCNode* createItemVisual(
-        bool player,
+        bool spawnPlayer,
         int orbIdx,
         float radius
     ) {
 
-#ifndef GEODE_IS_IOS
+#if defined(GEODE_IS_WINDOWS) || defined(GEODE_IS_MACOS)
 
-        if (player) {
+        if (spawnPlayer) {
 
             auto gm = GameManager::get();
 
@@ -321,22 +409,7 @@ class ScreensaverLayer : public CCLayerColor {
             );
 
             if (sp) {
-
-                sp->setColors(
-                    gm->colorForIdx(gm->getPlayerColor()),
-                    gm->colorForIdx(gm->getPlayerColor2())
-                );
-
-                if (gm->getPlayerGlow()) {
-                    sp->setGlowOutline(
-                        gm->colorForIdx(
-                            gm->getPlayerGlowColor()
-                        )
-                    );
-                }
-
                 sp->setScale(1.f);
-
                 return sp;
             }
 
@@ -356,13 +429,13 @@ class ScreensaverLayer : public CCLayerColor {
 
         return createFallbackVisual(
             radius,
-            player,
+            spawnPlayer,
             orbIdx
         );
     }
 
     // --------------------------------------------------
-    // Spawn
+    // Spawn item
     // --------------------------------------------------
 
     void addItem(bool forcePlayer = false) {
@@ -375,7 +448,11 @@ class ScreensaverLayer : public CCLayerColor {
 
         bool isBox = true;
 
-        if (!spawnPlayer) {
+        if (spawnPlayer) {
+
+            radius = 17.5f;
+
+        } else {
 
             orbIdx = std::rand() % 11;
 
@@ -387,34 +464,43 @@ class ScreensaverLayer : public CCLayerColor {
         PhysItem item;
 
         item.radius = radius;
-        item.isPlayerCube = spawnPlayer;
         item.isBox = isBox;
+        item.isPlayerCube = spawnPlayer;
         item.itemType = orbIdx;
 
-        item.position.x = spawnPlayer
-            ? randomFloat(radius, winSize.width - radius)
-            : randomFloat(
-                winSize.width * 0.1f,
-                winSize.width * 0.9f
-            );
+        // Spawn above the screen.
+
+        float minX = radius;
+        float maxX = std::max(
+            radius,
+            winSize.width - radius
+        );
+
+        item.position.x = randomFloat(minX, maxX);
 
         item.position.y = winSize.height +
             (spawnPlayer
                 ? randomFloat(200.f, 1000.f)
                 : 250.f);
 
-        item.angle = randomFloat(0.f, PI * 2.f);
-
         item.velocity = {
-            randomFloat(-30.f, 30.f),
+            spawnPlayer ? randomFloat(-10.f, 10.f)
+                        : randomFloat(-10.f, 10.f),
             0.f
         };
 
+        item.angle = randomFloat(0.f, PI * 2.f);
+
         item.angularVelocity = randomFloat(-1.5f, 1.5f);
 
-        // Player cube is slightly heavier.
+        calculateMass(item);
 
-        item.invMass = spawnPlayer ? 0.8f : 1.f;
+        // Push ordinary orbs.
+
+        if (!spawnPlayer) {
+            item.velocity.x +=
+                (10 - std::rand() % 21) * 0.05f * 40.f;
+        }
 
         item.vis = createItemVisual(
             spawnPlayer,
@@ -439,88 +525,70 @@ class ScreensaverLayer : public CCLayerColor {
     }
 
     // --------------------------------------------------
-    // Shape projection
-    // --------------------------------------------------
-
-    float projectedRadius(
-        const PhysItem& item,
-        Vec axis
-    ) const {
-
-        if (!item.isBox)
-            return item.radius;
-
-        Vec right = rotate(
-            {1.f, 0.f},
-            item.angle
-        );
-
-        Vec up = rotate(
-            {0.f, 1.f},
-            item.angle
-        );
-
-        return item.radius * (
-            std::abs(dot(right, axis)) +
-            std::abs(dot(up, axis))
-        );
-    }
-
-    // --------------------------------------------------
-    // Collision: circle-circle
+    // Circle vs circle
+    //
+    // Normal points from A to B.
     // --------------------------------------------------
 
     bool collideCircles(
         const PhysItem& a,
         const PhysItem& b,
-        Vec& normal,
+        Vec2& normal,
         float& penetration
-    ) {
+    ) const {
 
-        Vec delta = sub(b.position, a.position);
+        Vec2 delta = vecSub(
+            b.position,
+            a.position
+        );
 
-        float distance = length(delta);
+        float distance = vecLength(delta);
 
-        float total = a.radius + b.radius;
+        float totalRadius = a.radius + b.radius;
 
-        if (distance >= total)
+        if (distance >= totalRadius)
             return false;
 
         normal = distance > 0.0001f
-            ? mul(delta, 1.f / distance)
-            : Vec{1.f, 0.f};
+            ? vecMul(delta, 1.f / distance)
+            : Vec2{1.f, 0.f};
 
-        penetration = total - distance;
+        penetration = totalRadius - distance;
 
         return true;
     }
 
     // --------------------------------------------------
-    // Collision: box-box
+    // Box vs box (SAT)
     // --------------------------------------------------
 
     bool collideBoxes(
         const PhysItem& a,
         const PhysItem& b,
-        Vec& normal,
+        Vec2& normal,
         float& penetration
-    ) {
+    ) const {
 
-        Vec axes[4] = {
-            rotate({1.f, 0.f}, a.angle),
-            rotate({0.f, 1.f}, a.angle),
-            rotate({1.f, 0.f}, b.angle),
-            rotate({0.f, 1.f}, b.angle)
+        Vec2 axes[4] = {
+            vecRotate({1.f, 0.f}, a.angle),
+            vecRotate({0.f, 1.f}, a.angle),
+            vecRotate({1.f, 0.f}, b.angle),
+            vecRotate({0.f, 1.f}, b.angle)
         };
 
-        Vec delta = sub(b.position, a.position);
+        Vec2 delta = vecSub(
+            b.position,
+            a.position
+        );
 
-        float minimumOverlap = 1e30f;
-        Vec minimumAxis;
+        float minOverlap = 1e30f;
+        Vec2 minAxis = {1.f, 0.f};
 
         for (const auto& axis : axes) {
 
-            float distance = std::abs(dot(delta, axis));
+            float distance = std::abs(
+                vecDot(delta, axis)
+            );
 
             float overlap =
                 projectedRadius(a, axis) +
@@ -530,64 +598,56 @@ class ScreensaverLayer : public CCLayerColor {
             if (overlap <= 0.f)
                 return false;
 
-            if (overlap < minimumOverlap) {
-
-                minimumOverlap = overlap;
-                minimumAxis = axis;
+            if (overlap < minOverlap) {
+                minOverlap = overlap;
+                minAxis = axis;
             }
         }
 
-        if (dot(delta, minimumAxis) < 0.f)
-            minimumAxis = mul(minimumAxis, -1.f);
+        if (vecDot(delta, minAxis) < 0.f)
+            minAxis = vecMul(minAxis, -1.f);
 
-        normal = minimumAxis;
-        penetration = minimumOverlap;
+        normal = minAxis;
+        penetration = minOverlap;
 
         return true;
     }
 
     // --------------------------------------------------
-    // Collision: circle-box
+    // Circle vs box
+    //
+    // Normal points from circle to box.
     // --------------------------------------------------
 
     bool collideCircleBox(
         const PhysItem& circle,
         const PhysItem& box,
-        Vec& normal,
+        Vec2& normal,
         float& penetration
-    ) {
+    ) const {
 
-        Vec local = rotate(
-            sub(circle.position, box.position),
+        Vec2 local = vecRotate(
+            vecSub(circle.position, box.position),
             -box.angle
         );
 
-        float closestX = clampf(
-            local.x,
-            -box.radius,
-            box.radius
-        );
+        Vec2 closest = {
+            clampValue(local.x, -box.radius, box.radius),
+            clampValue(local.y, -box.radius, box.radius)
+        };
 
-        float closestY = clampf(
-            local.y,
-            -box.radius,
-            box.radius
-        );
+        Vec2 delta = vecSub(closest, local);
 
-        Vec closest = {closestX, closestY};
-
-        Vec delta = sub(closest, local);
-
-        float distance = length(delta);
+        float distance = vecLength(delta);
 
         if (distance > circle.radius)
             return false;
 
-        Vec localNormal;
+        Vec2 localNormal;
 
         if (distance > 0.0001f) {
 
-            localNormal = mul(
+            localNormal = vecMul(
                 delta,
                 1.f / distance
             );
@@ -619,9 +679,7 @@ class ScreensaverLayer : public CCLayerColor {
             }
         }
 
-        // Circle-to-box normal.
-
-        normal = rotate(
+        normal = vecRotate(
             localNormal,
             box.angle
         );
@@ -636,11 +694,12 @@ class ScreensaverLayer : public CCLayerColor {
     bool collide(
         const PhysItem& a,
         const PhysItem& b,
-        Vec& normal,
+        Vec2& normal,
         float& penetration
-    ) {
+    ) const {
 
         if (!a.isBox && !b.isBox) {
+
             return collideCircles(
                 a,
                 b,
@@ -650,6 +709,7 @@ class ScreensaverLayer : public CCLayerColor {
         }
 
         if (a.isBox && b.isBox) {
+
             return collideBoxes(
                 a,
                 b,
@@ -659,6 +719,7 @@ class ScreensaverLayer : public CCLayerColor {
         }
 
         if (!a.isBox && b.isBox) {
+
             return collideCircleBox(
                 a,
                 b,
@@ -674,7 +735,7 @@ class ScreensaverLayer : public CCLayerColor {
             penetration
         );
 
-        normal = mul(normal, -1.f);
+        normal = vecMul(normal, -1.f);
 
         return result;
     }
@@ -686,16 +747,16 @@ class ScreensaverLayer : public CCLayerColor {
     void resolveCollision(
         PhysItem& a,
         PhysItem& b,
-        Vec normal,
+        Vec2 normal,
         float penetration
     ) {
 
         float invA = a.invMass;
         float invB = b.invMass;
 
-        float totalInv = invA + invB;
+        float totalInvMass = invA + invB;
 
-        if (totalInv <= 0.f)
+        if (totalInvMass <= 0.f)
             return;
 
         // Position correction.
@@ -703,108 +764,125 @@ class ScreensaverLayer : public CCLayerColor {
         float correction = std::max(
             penetration - 0.01f,
             0.f
-        ) * 0.65f / totalInv;
+        ) * 0.75f / totalInvMass;
 
-        a.position = sub(
+        a.position = vecSub(
             a.position,
-            mul(normal, correction * invA)
+            vecMul(normal, correction * invA)
         );
 
-        b.position = add(
+        b.position = vecAdd(
             b.position,
-            mul(normal, correction * invB)
+            vecMul(normal, correction * invB)
         );
 
         // Relative velocity.
 
-        Vec relative = sub(
+        Vec2 relativeVelocity = vecSub(
             b.velocity,
             a.velocity
         );
 
-        float velocityAlongNormal = dot(
-            relative,
+        float velocityNormal = vecDot(
+            relativeVelocity,
             normal
         );
 
-        if (velocityAlongNormal > 0.f)
+        // Already separating.
+
+        if (velocityNormal > 0.f)
             return;
 
         float impulseMagnitude =
             -(1.f + RESTITUTION) *
-            velocityAlongNormal /
-            totalInv;
+            velocityNormal /
+            totalInvMass;
 
-        Vec impulse = mul(
+        Vec2 impulse = vecMul(
             normal,
             impulseMagnitude
         );
 
-        a.velocity = sub(
+        a.velocity = vecSub(
             a.velocity,
-            mul(impulse, invA)
+            vecMul(impulse, invA)
         );
 
-        b.velocity = add(
+        b.velocity = vecAdd(
             b.velocity,
-            mul(impulse, invB)
+            vecMul(impulse, invB)
         );
 
-        // Friction.
+        // Tangential friction.
 
-        relative = sub(
+        relativeVelocity = vecSub(
             b.velocity,
             a.velocity
         );
 
-        Vec tangent = sub(
-            relative,
-            mul(normal, dot(relative, normal))
+        Vec2 tangent = vecSub(
+            relativeVelocity,
+            vecMul(
+                normal,
+                vecDot(relativeVelocity, normal)
+            )
         );
 
-        float tangentLength = length(tangent);
+        float tangentLength = vecLength(tangent);
 
-        if (tangentLength > 0.0001f) {
+        if (tangentLength <= 0.0001f)
+            return;
 
-            tangent = mul(
-                tangent,
-                1.f / tangentLength
-            );
+        tangent = vecMul(
+            tangent,
+            1.f / tangentLength
+        );
 
-            float jt = -dot(relative, tangent) /
-                totalInv;
+        float jt =
+            -vecDot(relativeVelocity, tangent) /
+            totalInvMass;
 
-            float frictionImpulse = clampf(
-                jt,
-                -impulseMagnitude * FRICTION,
-                impulseMagnitude * FRICTION
-            );
+        float frictionLimit =
+            impulseMagnitude * FRICTION;
 
-            Vec friction = mul(
-                tangent,
-                frictionImpulse
-            );
+        jt = clampValue(
+            jt,
+            -frictionLimit,
+            frictionLimit
+        );
 
-            a.velocity = sub(
-                a.velocity,
-                mul(friction, invA)
-            );
+        Vec2 frictionImpulse = vecMul(
+            tangent,
+            jt
+        );
 
-            b.velocity = add(
-                b.velocity,
-                mul(friction, invB)
-            );
+        a.velocity = vecSub(
+            a.velocity,
+            vecMul(frictionImpulse, invA)
+        );
 
-            a.angularVelocity -=
-                frictionImpulse * 0.0008f;
+        b.velocity = vecAdd(
+            b.velocity,
+            vecMul(frictionImpulse, invB)
+        );
 
-            b.angularVelocity +=
-                frictionImpulse * 0.0008f;
-        }
+        // Approximate angular response.
+
+        a.angularVelocity -=
+            cross(normal, frictionImpulse) *
+            a.invInertia *
+            a.radius *
+            0.15f;
+
+        b.angularVelocity +=
+            cross(normal, frictionImpulse) *
+            b.invInertia *
+            b.radius *
+            0.15f;
     }
 
     // --------------------------------------------------
-    // World boundaries
+    // Screen boundaries
     // --------------------------------------------------
 
     void solveBoundaries(PhysItem& item) {
@@ -819,13 +897,19 @@ class ScreensaverLayer : public CCLayerColor {
             {0.f, 1.f}
         );
 
+        // Left wall.
+
         if (item.position.x - extentX < 0.f) {
 
             item.position.x = extentX;
 
             if (item.velocity.x < 0.f)
                 item.velocity.x *= -RESTITUTION;
+
+            item.angularVelocity *= 0.98f;
         }
+
+        // Right wall.
 
         if (item.position.x + extentX > winSize.width) {
 
@@ -833,9 +917,16 @@ class ScreensaverLayer : public CCLayerColor {
 
             if (item.velocity.x > 0.f)
                 item.velocity.x *= -RESTITUTION;
+
+            item.angularVelocity *= 0.98f;
         }
 
-        if (floorEnabled && item.position.y - extentY < 0.f) {
+        // Floor.
+
+        if (
+            floorEnabled &&
+            item.position.y - extentY < 0.f
+        ) {
 
             item.position.y = extentY;
 
@@ -844,29 +935,33 @@ class ScreensaverLayer : public CCLayerColor {
 
             item.velocity.x *= 0.985f;
             item.angularVelocity *= 0.97f;
+
+            if (std::abs(item.velocity.y) < 8.f)
+                item.velocity.y = 0.f;
         }
     }
 
     // --------------------------------------------------
-    // Physics step
+    // Physics integration
     // --------------------------------------------------
 
     void physicsStep(float dt) {
 
         float gravity = GRAVITY * physicsSpeed;
 
-        // Integrate movement.
+        // Integrate each body.
 
         for (auto& item : items) {
 
             item.velocity.y -= gravity * dt;
 
-            item.position = add(
+            item.position = vecAdd(
                 item.position,
-                mul(item.velocity, dt)
+                vecMul(item.velocity, dt)
             );
 
-            item.angle += item.angularVelocity * dt;
+            item.angle +=
+                item.angularVelocity * dt;
 
             // Angular damping.
 
@@ -875,24 +970,26 @@ class ScreensaverLayer : public CCLayerColor {
             solveBoundaries(item);
         }
 
-        // Pair collisions.
+        // Collision solver.
 
-        constexpr int ITERATIONS = 4;
-
-        for (int iteration = 0;
-             iteration < ITERATIONS;
-             iteration++) {
+        for (
+            int iteration = 0;
+            iteration < SOLVER_ITERATIONS;
+            iteration++
+        ) {
 
             for (size_t i = 0; i < items.size(); i++) {
 
-                for (size_t j = i + 1;
-                     j < items.size();
-                     j++) {
+                for (
+                    size_t j = i + 1;
+                    j < items.size();
+                    j++
+                ) {
 
                     auto& a = items[i];
                     auto& b = items[j];
 
-                    Vec normal;
+                    Vec2 normal;
                     float penetration = 0.f;
 
                     if (collide(
@@ -911,6 +1008,8 @@ class ScreensaverLayer : public CCLayerColor {
                     }
                 }
             }
+
+            // Keep objects inside the screen.
 
             for (auto& item : items)
                 solveBoundaries(item);
@@ -961,8 +1060,7 @@ class ScreensaverLayer : public CCLayerColor {
             Mod::get()->getSettingValue<bool>(
                 "infinite-fall"
             );
-        floorEnabled = !allowDrop;
-        
+
         physicsSpeed = static_cast<float>(
             Mod::get()->getSettingValue<int64_t>(
                 "physics-speed"
@@ -988,10 +1086,14 @@ class ScreensaverLayer : public CCLayerColor {
 
         physicsLag = 0.f;
 
+        floorEnabled = !allowDrop;
+
         pauseBeforeDrain =
             5.f + randomFloat(0.f, 1.f);
 
         nextSpawn = 0.f;
+
+        // Remove previous visuals.
 
         for (auto& item : items) {
 
@@ -1032,9 +1134,12 @@ class ScreensaverLayer : public CCLayerColor {
                 "image-fit"
             );
 
-        if (!CCLayerColor::initWithColor(
-            ccc4(bgCol.r, bgCol.g, bgCol.b, 0)
-        )) {
+        if (!CCLayerColor::initWithColor({
+            bgCol.r,
+            bgCol.g,
+            bgCol.b,
+            0
+        })) {
             return false;
         }
 
@@ -1043,10 +1148,18 @@ class ScreensaverLayer : public CCLayerColor {
         this->setContentSize(winSize);
         this->setPosition(CCPointZero);
 
-        if (bgType == "blur" && BlurAPI::isBlurAPIEnabled())
+        // Blur.
+
+        if (
+            bgType == "blur" &&
+            BlurAPI::isBlurAPIEnabled()
+        ) {
             BlurAPI::addBlur(this);
+        }
 
         loadBackgroundImage();
+
+        // Input.
 
         this->setTouchEnabled(true);
         this->setTouchMode(kCCTouchesOneByOne);
@@ -1080,7 +1193,11 @@ class ScreensaverLayer : public CCLayerColor {
         if (killed)
             return;
 
-        dt = clampf(dt, 0.f, 0.25f);
+        // Prevent huge physics jumps after a lag spike.
+
+        dt = clampValue(dt, 0.f, 0.25f);
+
+        // Fade in.
 
         if (!doneFade) {
 
@@ -1121,10 +1238,14 @@ class ScreensaverLayer : public CCLayerColor {
             return;
         }
 
+        float H = winSize.height;
+
         elapsed += dt;
 
         float spawnDelay =
             static_cast<float>(spawnTicks) / 60.f;
+
+        // Spawn objects.
 
         while (
             itemsMade < maxItems &&
@@ -1138,7 +1259,12 @@ class ScreensaverLayer : public CCLayerColor {
             nextSpawn = elapsed + spawnDelay;
         }
 
-        if (!playerIn && itemsMade >= maxItems / 2) {
+        // Player chance.
+
+        if (
+            !playerIn &&
+            itemsMade >= maxItems / 2
+        ) {
 
             playerIn = true;
 
@@ -1146,21 +1272,32 @@ class ScreensaverLayer : public CCLayerColor {
                 addItem(true);
         }
 
+        // Start draining.
+
         if (
             !allowDrop &&
             !filled &&
             itemsMade >= maxItems
         ) {
 
-            float spawnTime = maxItems * spawnDelay;
+            float spawnTime =
+                maxItems * spawnDelay;
 
-            if (elapsed >= spawnTime + pauseBeforeDrain) {
+            if (
+                elapsed >=
+                spawnTime + pauseBeforeDrain
+            ) {
 
                 filled = true;
                 draining = true;
+
+                // Remove the floor.
+
                 floorEnabled = false;
             }
         }
+
+        // Check if everything has fallen.
 
         if (!allowDrop && draining) {
 
@@ -1168,7 +1305,7 @@ class ScreensaverLayer : public CCLayerColor {
 
             for (const auto& item : items) {
 
-                if (item.position.y > -300.f) {
+                if (item.position.y >= -300.f) {
                     allGone = false;
                     break;
                 }
@@ -1182,9 +1319,13 @@ class ScreensaverLayer : public CCLayerColor {
             }
         }
 
+        // Infinite fall mode.
+
         if (
             allowDrop &&
-            elapsed > maxItems * spawnDelay + 8.f
+            elapsed >
+                static_cast<float>(maxItems) *
+                spawnDelay + 8.f
         ) {
 
             fullReset();
@@ -1192,7 +1333,7 @@ class ScreensaverLayer : public CCLayerColor {
             return;
         }
 
-        // Fixed timestep.
+        // Fixed timestep simulation.
 
         physicsLag += dt;
 
@@ -1261,14 +1402,20 @@ public:
     // Input
     // --------------------------------------------------
 
-    bool ccTouchBegan(CCTouch*, CCEvent*) override {
+    bool ccTouchBegan(
+        CCTouch*,
+        CCEvent*
+    ) override {
 
         kill();
 
         return true;
     }
 
-    void keyDown(enumKeyCodes, double) override {
+    void keyDown(
+        enumKeyCodes,
+        double
+    ) override {
         kill();
     }
 
@@ -1276,7 +1423,10 @@ public:
         kill();
     }
 
-    bool scrollWheel(float, float) override {
+    bool scrollWheel(
+        float,
+        float
+    ) override {
 
         kill();
 
@@ -1345,7 +1495,11 @@ class $modify(OrbitScrsvrScene, CCScene) {
             scene->getChildByType<PlayLayer>(0)
             != nullptr;
 
-        if (inEditor || (inPlay && !pauseOpen) || ssActive) {
+        if (
+            inEditor ||
+            (inPlay && !pauseOpen) ||
+            ssActive
+        ) {
 
             idleTimer = 0.f;
             return;
@@ -1370,6 +1524,7 @@ class $modify(OrbitScrsvrScene, CCScene) {
         if (ss) {
 
             ss->setZOrder(9999);
+
             this->addChild(ss);
 
         } else {
@@ -1386,12 +1541,16 @@ class $modify(OrbitScrsvrScene, CCScene) {
 class $modify(CCTouchDispatcher) {
 
     void touches(
-        CCSet* t,
-        CCEvent* e,
+        CCSet* touches,
+        CCEvent* event,
         unsigned int type
     ) {
 
-        CCTouchDispatcher::touches(t, e, type);
+        CCTouchDispatcher::touches(
+            touches,
+            event,
+            type
+        );
 
         if (type == CCTOUCHBEGAN)
             idleTimer = 0.f;
@@ -1402,7 +1561,7 @@ class $modify(CCTouchDispatcher) {
 // Keyboard dispatcher
 // --------------------------------------------------
 
-#ifndef GEODE_IS_IOS
+#if defined(GEODE_IS_WINDOWS) || defined(GEODE_IS_MACOS)
 
 class $modify(CCKeyboardDispatcher) {
 
@@ -1410,7 +1569,7 @@ class $modify(CCKeyboardDispatcher) {
         enumKeyCodes key,
         bool down,
         bool repeat,
-        double ts
+        double timestamp
     ) {
 
         bool result =
@@ -1418,7 +1577,7 @@ class $modify(CCKeyboardDispatcher) {
                 key,
                 down,
                 repeat,
-                ts
+                timestamp
             );
 
         if (down && !repeat) {
@@ -1458,7 +1617,7 @@ class $modify(PauseLayer) {
         idleTimer = 0.f;
     }
 
-#ifndef GEODE_IS_IOS
+#if defined(GEODE_IS_WINDOWS) || defined(GEODE_IS_MACOS)
 
     void onQuit(CCObject* sender) {
 
@@ -1497,10 +1656,16 @@ class $modify(PauseLayer) {
 
 class $modify(LevelEditorLayer) {
 
-    bool init(GJGameLevel* lvl, bool unk) {
+    bool init(
+        GJGameLevel* level,
+        bool unk
+    ) {
 
         idleTimer = 0.f;
 
-        return LevelEditorLayer::init(lvl, unk);
+        return LevelEditorLayer::init(
+            level,
+            unk
+        );
     }
 };
