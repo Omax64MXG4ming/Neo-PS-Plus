@@ -1,57 +1,91 @@
 #include <Geode/modify/CCLayer.hpp>
+
 #ifndef GEODE_IS_IOS
+
 using namespace geode::prelude;
+
 class $modify(CCLayer) {
     void onEnter() override {
         CCLayer::onEnter();
 
         std::string typeName = typeid(*this).name();
 
+        auto isType = [&](const char* name) {
+            return typeName.find(name) != std::string::npos;
+        };
+
         if (
-            (exact_cast<GauntletLayer*>(this) && !Mod::get()->getSettingValue<bool>("gauntletlayer")) ||
-            exact_cast<GauntletSelectLayer*>(this) ||
-            exact_cast<SecretRewardsLayer*>(this) ||
-            exact_cast<LevelSelectLayer*>(this) ||
-            (typeName.find("SogLayer") != std::string::npos) ||
-         /* (typeName.find("MeltdownSelectLayer") != std::string::npos) ||
-            (typeName.find("SubZeroSelectLayer") != std::string::npos) || */
-            exact_cast<LevelAreaInnerLayer*>(this) ||
-            (exact_cast<GJGarageLayer*>(this) && !Mod::get()->getSettingValue<bool>("gjgaragelayer")) ||
-            (exact_cast<CreatorLayer*>(this) && !Mod::get()->getSettingValue<bool>("creatorlayer")) ||
-            (exact_cast<LoadingLayer*>(this) && !Mod::get()->getSettingValue<bool>("loadinglayer")) ||
-            (typeName.find("GlobedServersLayer") != std::string::npos && !Mod::get()->getSettingValue<bool>("globedlayers")) ||
-            (typeName.find("GlobedMenuLayer") != std::string::npos && !Mod::get()->getSettingValue<bool>("globedlayers")) ||
-            (exact_cast<SecretLayer4*>(this) && !Mod::get()->getSettingValue<bool>("secretlayers")) ||
-            (exact_cast<SecretLayer2*>(this) && !Mod::get()->getSettingValue<bool>("secretlayers")) ||
-            (exact_cast<SecretLayer*>(this) && !Mod::get()->getSettingValue<bool>("secretlayers")) ||
-            (exact_cast<LevelAreaLayer*>(this) && !Mod::get()->getSettingValue<bool>("levelarealayer")) ||
-            (exact_cast<LevelInfoLayer*>(this) && !Mod::get()->getSettingValue<bool>("levelinfolayer"))
-        )
+            (isType("GauntletLayer") &&
+                !Mod::get()->getSettingValue<bool>("gauntletlayer")) ||
+
+            isType("GauntletSelectLayer") ||
+            isType("SecretRewardsLayer") ||
+            isType("LevelSelectLayer") ||
+            isType("SogLayer") ||
+
+            isType("LevelAreaInnerLayer") ||
+
+            (isType("GJGarageLayer") &&
+                !Mod::get()->getSettingValue<bool>("gjgaragelayer")) ||
+
+            (isType("CreatorLayer") &&
+                !Mod::get()->getSettingValue<bool>("creatorlayer")) ||
+
+            (isType("LoadingLayer") &&
+                !Mod::get()->getSettingValue<bool>("loadinglayer")) ||
+
+            (isType("GlobedServersLayer") &&
+                !Mod::get()->getSettingValue<bool>("globedlayers")) ||
+
+            (isType("GlobedMenuLayer") &&
+                !Mod::get()->getSettingValue<bool>("globedlayers")) ||
+
+            ((isType("SecretLayer4") ||
+              isType("SecretLayer2") ||
+              isType("SecretLayer")) &&
+                !Mod::get()->getSettingValue<bool>("secretlayers")) ||
+
+            (isType("LevelAreaLayer") &&
+                !Mod::get()->getSettingValue<bool>("levelarealayer")) ||
+
+            (isType("LevelInfoLayer") &&
+                !Mod::get()->getSettingValue<bool>("levelinfolayer"))
+        ) {
             return;
+        }
 
         ccColor3B randomColor = {255, 255, 255};
 
         if (Mod::get()->getSettingValue<bool>("loadinglayer")) {
-            if (auto sprite = typeinfo_cast<CCSprite*>(this->getChildByIDRecursive("bg-texture"))) {
+            if (auto sprite = typeinfo_cast<CCSprite*>(
+                this->getChildByIDRecursive("bg-texture")
+            )) {
                 sprite->setColor(randomColor);
             }
         }
 
-        if (auto sprite = typeinfo_cast<CCSprite*>(this->getChildByIDRecursive("background"))) {
+        if (auto sprite = typeinfo_cast<CCSprite*>(
+            this->getChildByIDRecursive("background")
+        )) {
             sprite->setColor(randomColor);
         }
 
         if (Mod::get()->getSettingValue<bool>("cvoltonbetterinfobackground")) {
-            if (auto sprite = typeinfo_cast<CCSprite*>(this->getChildByIDRecursive("cvolton.betterinfo/background"))) {
+            if (auto sprite = typeinfo_cast<CCSprite*>(
+                this->getChildByIDRecursive("cvolton.betterinfo/background")
+            )) {
                 sprite->setColor(randomColor);
             }
         }
 
-        if (auto sprite = typeinfo_cast<CCSprite*>(this->getChildByIDRecursive("bg"))) {
+        if (auto sprite = typeinfo_cast<CCSprite*>(
+            this->getChildByIDRecursive("bg")
+        )) {
             sprite->setColor(randomColor);
         }
 
         auto children = this->getChildren();
+
         if (children) {
             for (CCNode* node : this->getChildrenExt()) {
                 if (auto scaleSprite = typeinfo_cast<CCScale9Sprite*>(node)) {
@@ -83,4 +117,5 @@ class $modify(CCLayer) {
         }
     }
 };
+
 #endif
