@@ -29,7 +29,11 @@ jobs:
           - name: macOS
             os: macos-latest
             target: MacOS
-
+            
+          - name: iOS
+            os: macos-latest
+            target: iOS
+            
     steps:
       - name: Checkout
         uses: actions/checkout@v4
