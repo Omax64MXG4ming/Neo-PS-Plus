@@ -7,9 +7,11 @@
 
 #if defined(GEODE_IS_WINDOWS) || defined(GEODE_IS_MACOS)
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
+#endif
+
 #include <Geode/binding/GameObject.hpp>
 #include <Geode/binding/SimplePlayer.hpp>
-#endif
+#include <Geode/binding/GameManager.hpp>
 
 #include "../include/BlurAPI.hpp"
 
@@ -393,47 +395,55 @@ void loadBackgroundImage() {
     // Create visual
     // --------------------------------------------------
 
-    CCNode* createItemVisual(
-        bool spawnPlayer,
-        int orbIdx,
-        float radius
-    ) {
 
-#if defined(GEODE_IS_WINDOWS) || defined(GEODE_IS_MACOS)
+CCNode* createItemVisual(
+    bool spawnPlayer,
+    int orbIdx,
+    float radius
+) {
+    if (spawnPlayer) {
+        auto gm = GameManager::get();
 
-        if (spawnPlayer) {
-
-            auto gm = GameManager::get();
-
-            auto sp = SimplePlayer::create(
-                gm->getPlayerFrame()
-            );
-
-            if (sp) {
-                sp->setScale(1.f);
-                return sp;
-            }
-
-        } else {
-
-            auto obj = GameObject::createWithKey(
-                orbIds[orbIdx]
-            );
-
-            if (obj) {
-                obj->setScale(1.f);
-                return obj;
-            }
-        }
-
-#endif
-
-        return createFallbackVisual(
-            radius,
-            spawnPlayer,
-            orbIdx
+        auto sp = SimplePlayer::create(
+            gm->getPlayerFrame()
         );
+
+        if (sp) {
+            sp->setColors(
+                gm->colorForIdx(gm->getPlayerColor()),
+                gm->colorForIdx(gm->getPlayerColor2())
+            );
+
+            if (gm->getPlayerGlow()) {
+                sp->setGlowOutline(
+                    gm->colorForIdx(gm->getPlayerGlowColor())
+                );
+            }
+
+            sp->setScale(1.f);
+            return sp;
+        }
+    } else {
+        if (orbIdx < 0 || orbIdx >= 11)
+            return nullptr;
+
+        auto obj = GameObject::createWithKey(
+            orbIds[orbIdx]
+        );
+
+        if (obj) {
+            obj->setScale(1.f);
+            return obj;
+        }
     }
+
+    return createFallbackVisual(
+        radius,
+        spawnPlayer,
+        orbIdx
+    );
+}
+
 
     // --------------------------------------------------
     // Spawn item
