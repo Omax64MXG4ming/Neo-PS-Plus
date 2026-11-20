@@ -9,5 +9,3 @@
 
 * Auto Updater for the Mod
 <img width="2400" height="1080" alt="108328" src="https://github.com/user-attachments/assets/c801ac2a-d4dc-41ca-89db-a167bcd8f540" />
-
-* Fixes
