@@ -23,17 +23,17 @@ jobs:
             target: Android64
 
           - name: Windows
-            os: windows-latest
+            os: windows-2022
             target: Win64
 
           - name: macOS
             os: macos-latest
             target: MacOS
-            
+
           - name: iOS
             os: macos-latest
             target: iOS
-            
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -81,6 +81,13 @@ jobs:
             --target=aarch64-none-linux-android23 \
             -std=c++23 \
             -fsyntax-only /tmp/check.cpp
+
+      - name: Check Windows compiler
+        if: matrix.config.target == 'Win64'
+        shell: pwsh
+        run: |
+          clang++ --version
+          where.exe clang++
 
       # Build
       - name: Build Geode Mod
