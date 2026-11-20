@@ -1,3 +1,4 @@
+#include <Geode/Geode.hpp>
 #include <Geode/modify/CCScene.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/PauseLayer.hpp>
@@ -6,11 +7,11 @@
 
 #ifndef GEODE_IS_IOS
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
+#include <Geode/binding/GameObject.hpp>
+#include <Geode/binding/SimplePlayer.hpp>
 #endif
 
 #include "../BlurAPI.hpp"
-
-#include <box2d/box2d.h>
 
 #include <algorithm>
 #include <cmath>
@@ -22,6 +23,73 @@
 
 using namespace geode::prelude;
 using namespace cocos2d;
+
+namespace {
+
+constexpr float PI = 3.14159265358979323846f;
+constexpr float FIXED_STEP = 1.f / 60.f;
+constexpr float GRAVITY = 1176.f;
+constexpr float RESTITUTION = 0.5f;
+constexpr float FRICTION = 0.65f;
+
+struct Vec {
+    float x = 0.f;
+    float y = 0.f;
+};
+
+static Vec add(Vec a, Vec b) {
+    return {a.x + b.x, a.y + b.y};
+}
+
+static Vec sub(Vec a, Vec b) {
+    return {a.x - b.x, a.y - b.y};
+}
+
+static Vec mul(Vec a, float s) {
+    return {a.x * s, a.y * s};
+}
+
+static float dot(Vec a, Vec b) {
+    return a.x * b.x + a.y * b.y;
+}
+
+static float length(Vec a) {
+    return std::sqrt(dot(a, a));
+}
+
+static Vec normalize(Vec a) {
+    float l = length(a);
+
+    if (l <= 0.0001f)
+        return {1.f, 0.f};
+
+    return mul(a, 1.f / l);
+}
+
+static Vec rotate(Vec p, float angle) {
+    float c = std::cos(angle);
+    float s = std::sin(angle);
+
+    return {
+        p.x * c - p.y * s,
+        p.x * s + p.y * c
+    };
+}
+
+static Vec perpendicular(Vec p) {
+    return {-p.y, p.x};
+}
+
+static float clampf(float v, float a, float b) {
+    return std::max(a, std::min(v, b));
+}
+
+static float randomFloat(float min, float max) {
+    return min + (max - min) *
+        (static_cast<float>(std::rand()) / RAND_MAX);
+}
+
+} // namespace
 
 // --------------------------------------------------
 // Global state
@@ -36,21 +104,28 @@ static bool pauseOpen = false;
 // --------------------------------------------------
 
 struct PhysItem {
-    b2Body* phys;
-    CCNode* vis;
-    float radius;
-    int itemType;
-    bool isPlayerCube;
+    CCNode* vis = nullptr;
+
+    Vec position;
+    Vec velocity;
+
+    float radius = 16.f;
+    float angle = 0.f;
+    float angularVelocity = 0.f;
+
+    int itemType = -1;
+
+    bool isPlayerCube = false;
+    bool isBox = false;
+
+    float invMass = 1.f;
 };
 
 // --------------------------------------------------
-// Screensaver layer
+// Screensaver
 // --------------------------------------------------
 
 class ScreensaverLayer : public CCLayerColor {
-
-    b2World* physWorld = nullptr;
-    b2Body* ground = nullptr;
 
     std::vector<PhysItem> items;
 
@@ -60,12 +135,13 @@ class ScreensaverLayer : public CCLayerColor {
     bool playerIn = false;
     bool draining = false;
     bool filled = false;
-
+    bool floorEnabled = true;
     float physicsLag = 0.f;
     float pauseBeforeDrain = 0.f;
     float nextSpawn = 0.f;
 
     // Configuration
+
     int maxItems = 0;
     float physicsSpeed = 1.f;
     int playerChance = 0;
@@ -74,6 +150,7 @@ class ScreensaverLayer : public CCLayerColor {
     int spawnTicks = 1;
 
     // Background
+
     std::string bgType;
     std::string bgFit;
 
@@ -83,6 +160,7 @@ class ScreensaverLayer : public CCLayerColor {
     CCSprite* bgSprite = nullptr;
 
     // Animation
+
     float fadeIn = 0.f;
 
     bool doneFade = false;
@@ -94,42 +172,57 @@ class ScreensaverLayer : public CCLayerColor {
     static const float orbSizes[11];
 
     // --------------------------------------------------
-    // Create physics edge
+    // Visual fallback
     // --------------------------------------------------
 
-    void makeEdge(
-        float x1,
-        float y1,
-        float x2,
-        float y2,
-        b2Body** out
+    CCNode* createFallbackVisual(
+        float radius,
+        bool player,
+        int orbIdx
     ) {
-        b2BodyDef bd;
-        bd.type = b2_staticBody;
 
-        b2Body* edgeBody = physWorld->CreateBody(&bd);
+        ccColor3B color;
 
-        b2EdgeShape edge;
+        if (player) {
+            color = ccc3(60, 170, 255);
+        } else {
+            static const ccColor3B colors[11] = {
+                {255, 190, 50},
+                {255, 90, 90},
+                {80, 220, 140},
+                {160, 100, 255},
+                {255, 120, 220},
+                {80, 220, 255},
+                {255, 220, 80},
+                {120, 160, 255},
+                {255, 140, 70},
+                {160, 255, 100},
+                {220, 220, 220}
+            };
 
-        edge.SetTwoSided(
-            {x1 / 40.f, y1 / 40.f},
-            {x2 / 40.f, y2 / 40.f}
+            color = colors[
+                std::max(0, std::min(orbIdx, 10))
+            ];
+        }
+
+        float size = radius * 2.f;
+
+        auto visual = CCLayerColor::create(
+            ccc4(color.r, color.g, color.b, 255),
+            size,
+            size
         );
 
-        b2FixtureDef fd;
+        if (!visual)
+            return nullptr;
 
-        fd.shape = &edge;
-        fd.restitution = 0.5f;
-        fd.friction = 0.7f;
+        visual->setAnchorPoint({0.5f, 0.5f});
 
-        edgeBody->CreateFixture(&fd);
-
-        if (out)
-            *out = edgeBody;
+        return visual;
     }
 
     // --------------------------------------------------
-    // Background image
+    // Background
     // --------------------------------------------------
 
     void loadBackgroundImage() {
@@ -143,7 +236,9 @@ class ScreensaverLayer : public CCLayerColor {
             return;
 
         auto imgPathStr =
-            Mod::get()->getSettingValue<std::string>("image-path");
+            Mod::get()->getSettingValue<std::string>(
+                "image-path"
+            );
 
         if (imgPathStr.empty())
             return;
@@ -171,8 +266,8 @@ class ScreensaverLayer : public CCLayerColor {
         bgSprite->setAnchorPoint({0.5f, 0.5f});
 
         bgSprite->setPosition({
-            winSize.width / 2,
-            winSize.height / 2
+            winSize.width / 2.f,
+            winSize.height / 2.f
         });
 
         fitBackgroundImage();
@@ -187,22 +282,17 @@ class ScreensaverLayer : public CCLayerColor {
 
         auto sz = bgSprite->getTextureRect().size;
 
-        if (sz.width <= 0 || sz.height <= 0)
+        if (sz.width <= 0.f || sz.height <= 0.f)
             return;
 
         float sx = winSize.width / sz.width;
         float sy = winSize.height / sz.height;
 
         if (bgFit == "stretch") {
-
             bgSprite->setScaleX(sx);
             bgSprite->setScaleY(sy);
-
         } else {
-
-            float s = std::max(sx, sy);
-
-            bgSprite->setScale(s);
+            bgSprite->setScale(std::max(sx, sy));
         }
 
         bgSprite->setOpacity(
@@ -211,115 +301,18 @@ class ScreensaverLayer : public CCLayerColor {
     }
 
     // --------------------------------------------------
-    // Spawn item
+    // Item visual
     // --------------------------------------------------
 
-    void addItem(bool forcePlayer = false) {
+    CCNode* createItemVisual(
+        bool player,
+        int orbIdx,
+        float radius
+    ) {
 
-        float rad;
+#ifndef GEODE_IS_IOS
 
-        int orbIdx = -1;
-
-        bool spawnPlayer = forcePlayer;
-        bool isBox = false;
-
-        if (spawnPlayer) {
-
-            rad = 17.5f;
-            isBox = true;
-
-        } else {
-
-            orbIdx = std::rand() % 11;
-
-            isBox = (orbIdx == 10);
-
-            rad = orbSizes[orbIdx] / 2.f;
-        }
-
-        b2BodyDef bd;
-
-        bd.type = b2_dynamicBody;
-
-        bd.angle =
-            (std::rand() % 360) *
-            static_cast<float>(M_PI) / 180.f;
-
-        // Spawn position
-        if (spawnPlayer) {
-
-            bd.position.Set(
-                static_cast<float>(
-                    std::rand() %
-                    static_cast<int>(
-                        std::max(1.f, winSize.width)
-                    )
-                ) / 40.f,
-
-                -(200.f + std::rand() % 800) / 40.f
-            );
-
-        } else {
-
-            bd.position.Set(
-                (
-                    winSize.width * 0.1f +
-                    std::rand() %
-                    static_cast<int>(
-                        std::max(1.f, winSize.width * 0.8f)
-                    )
-                ) / 40.f,
-
-                -250.f / 40.f
-            );
-        }
-
-        b2Body* body = physWorld->CreateBody(&bd);
-
-        b2FixtureDef fd;
-
-        b2CircleShape circ;
-        b2PolygonShape poly;
-
-        fd.density = 1.f;
-        fd.restitution = 0.5f;
-        fd.friction = spawnPlayer ? 0.7f : 1.f;
-
-        if (isBox) {
-
-            poly.SetAsBox(
-                rad / 40.f,
-                rad / 40.f
-            );
-
-            fd.shape = &poly;
-
-        } else {
-
-            circ.m_radius = rad / 40.f;
-
-            fd.shape = &circ;
-        }
-
-        body->CreateFixture(&fd);
-
-        // Push orbs
-        if (!spawnPlayer) {
-
-            body->ApplyLinearImpulse(
-                {
-                    (10 - std::rand() % 21) * 0.05f,
-                    0.f
-                },
-                body->GetWorldCenter(),
-                true
-            );
-        }
-
-        // Visual
-        CCNode* visual = nullptr;
-
-        if (spawnPlayer) {
+        if (player) {
 
             auto gm = GameManager::get();
 
@@ -335,7 +328,6 @@ class ScreensaverLayer : public CCLayerColor {
                 );
 
                 if (gm->getPlayerGlow()) {
-
                     sp->setGlowOutline(
                         gm->colorForIdx(
                             gm->getPlayerGlowColor()
@@ -345,14 +337,7 @@ class ScreensaverLayer : public CCLayerColor {
 
                 sp->setScale(1.f);
 
-                sp->setPosition({
-                    -9999.f,
-                    -9999.f
-                });
-
-                this->addChild(sp, 3);
-
-                visual = sp;
+                return sp;
             }
 
         } else {
@@ -362,27 +347,596 @@ class ScreensaverLayer : public CCLayerColor {
             );
 
             if (obj) {
-
                 obj->setScale(1.f);
-
-                obj->setPosition({
-                    -9999.f,
-                    -9999.f
-                });
-
-                this->addChild(obj, 2);
-
-                visual = obj;
+                return obj;
             }
         }
 
-        items.push_back({
-            body,
-            visual,
-            rad,
+#endif
+
+        return createFallbackVisual(
+            radius,
+            player,
+            orbIdx
+        );
+    }
+
+    // --------------------------------------------------
+    // Spawn
+    // --------------------------------------------------
+
+    void addItem(bool forcePlayer = false) {
+
+        bool spawnPlayer = forcePlayer;
+
+        int orbIdx = -1;
+
+        float radius = 17.5f;
+
+        bool isBox = true;
+
+        if (!spawnPlayer) {
+
+            orbIdx = std::rand() % 11;
+
+            isBox = (orbIdx == 10);
+
+            radius = orbSizes[orbIdx] / 2.f;
+        }
+
+        PhysItem item;
+
+        item.radius = radius;
+        item.isPlayerCube = spawnPlayer;
+        item.isBox = isBox;
+        item.itemType = orbIdx;
+
+        item.position.x = spawnPlayer
+            ? randomFloat(radius, winSize.width - radius)
+            : randomFloat(
+                winSize.width * 0.1f,
+                winSize.width * 0.9f
+            );
+
+        item.position.y = winSize.height +
+            (spawnPlayer
+                ? randomFloat(200.f, 1000.f)
+                : 250.f);
+
+        item.angle = randomFloat(0.f, PI * 2.f);
+
+        item.velocity = {
+            randomFloat(-30.f, 30.f),
+            0.f
+        };
+
+        item.angularVelocity = randomFloat(-1.5f, 1.5f);
+
+        // Player cube is slightly heavier.
+
+        item.invMass = spawnPlayer ? 0.8f : 1.f;
+
+        item.vis = createItemVisual(
+            spawnPlayer,
             orbIdx,
-            spawnPlayer
-        });
+            radius
+        );
+
+        if (item.vis) {
+
+            item.vis->setPosition({
+                -9999.f,
+                -9999.f
+            });
+
+            this->addChild(
+                item.vis,
+                spawnPlayer ? 3 : 2
+            );
+        }
+
+        items.push_back(item);
+    }
+
+    // --------------------------------------------------
+    // Shape projection
+    // --------------------------------------------------
+
+    float projectedRadius(
+        const PhysItem& item,
+        Vec axis
+    ) const {
+
+        if (!item.isBox)
+            return item.radius;
+
+        Vec right = rotate(
+            {1.f, 0.f},
+            item.angle
+        );
+
+        Vec up = rotate(
+            {0.f, 1.f},
+            item.angle
+        );
+
+        return item.radius * (
+            std::abs(dot(right, axis)) +
+            std::abs(dot(up, axis))
+        );
+    }
+
+    // --------------------------------------------------
+    // Collision: circle-circle
+    // --------------------------------------------------
+
+    bool collideCircles(
+        const PhysItem& a,
+        const PhysItem& b,
+        Vec& normal,
+        float& penetration
+    ) {
+
+        Vec delta = sub(b.position, a.position);
+
+        float distance = length(delta);
+
+        float total = a.radius + b.radius;
+
+        if (distance >= total)
+            return false;
+
+        normal = distance > 0.0001f
+            ? mul(delta, 1.f / distance)
+            : Vec{1.f, 0.f};
+
+        penetration = total - distance;
+
+        return true;
+    }
+
+    // --------------------------------------------------
+    // Collision: box-box
+    // --------------------------------------------------
+
+    bool collideBoxes(
+        const PhysItem& a,
+        const PhysItem& b,
+        Vec& normal,
+        float& penetration
+    ) {
+
+        Vec axes[4] = {
+            rotate({1.f, 0.f}, a.angle),
+            rotate({0.f, 1.f}, a.angle),
+            rotate({1.f, 0.f}, b.angle),
+            rotate({0.f, 1.f}, b.angle)
+        };
+
+        Vec delta = sub(b.position, a.position);
+
+        float minimumOverlap = 1e30f;
+        Vec minimumAxis;
+
+        for (const auto& axis : axes) {
+
+            float distance = std::abs(dot(delta, axis));
+
+            float overlap =
+                projectedRadius(a, axis) +
+                projectedRadius(b, axis) -
+                distance;
+
+            if (overlap <= 0.f)
+                return false;
+
+            if (overlap < minimumOverlap) {
+
+                minimumOverlap = overlap;
+                minimumAxis = axis;
+            }
+        }
+
+        if (dot(delta, minimumAxis) < 0.f)
+            minimumAxis = mul(minimumAxis, -1.f);
+
+        normal = minimumAxis;
+        penetration = minimumOverlap;
+
+        return true;
+    }
+
+    // --------------------------------------------------
+    // Collision: circle-box
+    // --------------------------------------------------
+
+    bool collideCircleBox(
+        const PhysItem& circle,
+        const PhysItem& box,
+        Vec& normal,
+        float& penetration
+    ) {
+
+        Vec local = rotate(
+            sub(circle.position, box.position),
+            -box.angle
+        );
+
+        float closestX = clampf(
+            local.x,
+            -box.radius,
+            box.radius
+        );
+
+        float closestY = clampf(
+            local.y,
+            -box.radius,
+            box.radius
+        );
+
+        Vec closest = {closestX, closestY};
+
+        Vec delta = sub(closest, local);
+
+        float distance = length(delta);
+
+        if (distance > circle.radius)
+            return false;
+
+        Vec localNormal;
+
+        if (distance > 0.0001f) {
+
+            localNormal = mul(
+                delta,
+                1.f / distance
+            );
+
+            penetration = circle.radius - distance;
+
+        } else {
+
+            float dx = box.radius - std::abs(local.x);
+            float dy = box.radius - std::abs(local.y);
+
+            if (dx < dy) {
+
+                localNormal = {
+                    local.x >= 0.f ? 1.f : -1.f,
+                    0.f
+                };
+
+                penetration = circle.radius + dx;
+
+            } else {
+
+                localNormal = {
+                    0.f,
+                    local.y >= 0.f ? 1.f : -1.f
+                };
+
+                penetration = circle.radius + dy;
+            }
+        }
+
+        // Circle-to-box normal.
+
+        normal = rotate(
+            localNormal,
+            box.angle
+        );
+
+        return true;
+    }
+
+    // --------------------------------------------------
+    // General collision
+    // --------------------------------------------------
+
+    bool collide(
+        const PhysItem& a,
+        const PhysItem& b,
+        Vec& normal,
+        float& penetration
+    ) {
+
+        if (!a.isBox && !b.isBox) {
+            return collideCircles(
+                a,
+                b,
+                normal,
+                penetration
+            );
+        }
+
+        if (a.isBox && b.isBox) {
+            return collideBoxes(
+                a,
+                b,
+                normal,
+                penetration
+            );
+        }
+
+        if (!a.isBox && b.isBox) {
+            return collideCircleBox(
+                a,
+                b,
+                normal,
+                penetration
+            );
+        }
+
+        bool result = collideCircleBox(
+            b,
+            a,
+            normal,
+            penetration
+        );
+
+        normal = mul(normal, -1.f);
+
+        return result;
+    }
+
+    // --------------------------------------------------
+    // Collision resolution
+    // --------------------------------------------------
+
+    void resolveCollision(
+        PhysItem& a,
+        PhysItem& b,
+        Vec normal,
+        float penetration
+    ) {
+
+        float invA = a.invMass;
+        float invB = b.invMass;
+
+        float totalInv = invA + invB;
+
+        if (totalInv <= 0.f)
+            return;
+
+        // Position correction.
+
+        float correction = std::max(
+            penetration - 0.01f,
+            0.f
+        ) * 0.65f / totalInv;
+
+        a.position = sub(
+            a.position,
+            mul(normal, correction * invA)
+        );
+
+        b.position = add(
+            b.position,
+            mul(normal, correction * invB)
+        );
+
+        // Relative velocity.
+
+        Vec relative = sub(
+            b.velocity,
+            a.velocity
+        );
+
+        float velocityAlongNormal = dot(
+            relative,
+            normal
+        );
+
+        if (velocityAlongNormal > 0.f)
+            return;
+
+        float impulseMagnitude =
+            -(1.f + RESTITUTION) *
+            velocityAlongNormal /
+            totalInv;
+
+        Vec impulse = mul(
+            normal,
+            impulseMagnitude
+        );
+
+        a.velocity = sub(
+            a.velocity,
+            mul(impulse, invA)
+        );
+
+        b.velocity = add(
+            b.velocity,
+            mul(impulse, invB)
+        );
+
+        // Friction.
+
+        relative = sub(
+            b.velocity,
+            a.velocity
+        );
+
+        Vec tangent = sub(
+            relative,
+            mul(normal, dot(relative, normal))
+        );
+
+        float tangentLength = length(tangent);
+
+        if (tangentLength > 0.0001f) {
+
+            tangent = mul(
+                tangent,
+                1.f / tangentLength
+            );
+
+            float jt = -dot(relative, tangent) /
+                totalInv;
+
+            float frictionImpulse = clampf(
+                jt,
+                -impulseMagnitude * FRICTION,
+                impulseMagnitude * FRICTION
+            );
+
+            Vec friction = mul(
+                tangent,
+                frictionImpulse
+            );
+
+            a.velocity = sub(
+                a.velocity,
+                mul(friction, invA)
+            );
+
+            b.velocity = add(
+                b.velocity,
+                mul(friction, invB)
+            );
+
+            a.angularVelocity -=
+                frictionImpulse * 0.0008f;
+
+            b.angularVelocity +=
+                frictionImpulse * 0.0008f;
+        }
+    }
+
+    // --------------------------------------------------
+    // World boundaries
+    // --------------------------------------------------
+
+    void solveBoundaries(PhysItem& item) {
+
+        float extentX = projectedRadius(
+            item,
+            {1.f, 0.f}
+        );
+
+        float extentY = projectedRadius(
+            item,
+            {0.f, 1.f}
+        );
+
+        if (item.position.x - extentX < 0.f) {
+
+            item.position.x = extentX;
+
+            if (item.velocity.x < 0.f)
+                item.velocity.x *= -RESTITUTION;
+        }
+
+        if (item.position.x + extentX > winSize.width) {
+
+            item.position.x = winSize.width - extentX;
+
+            if (item.velocity.x > 0.f)
+                item.velocity.x *= -RESTITUTION;
+        }
+
+        if (!allowDrop && item.position.y - extentY < 0.f) {
+
+            item.position.y = extentY;
+
+            if (item.velocity.y < 0.f)
+                item.velocity.y *= -RESTITUTION;
+
+            item.velocity.x *= 0.985f;
+            item.angularVelocity *= 0.97f;
+        }
+    }
+
+    // --------------------------------------------------
+    // Physics step
+    // --------------------------------------------------
+
+    void physicsStep(float dt) {
+
+        float gravity = GRAVITY * physicsSpeed;
+
+        // Integrate movement.
+
+        for (auto& item : items) {
+
+            item.velocity.y -= gravity * dt;
+
+            item.position = add(
+                item.position,
+                mul(item.velocity, dt)
+            );
+
+            item.angle += item.angularVelocity * dt;
+
+            // Angular damping.
+
+            item.angularVelocity *= 0.999f;
+
+            solveBoundaries(item);
+        }
+
+        // Pair collisions.
+
+        constexpr int ITERATIONS = 4;
+
+        for (int iteration = 0;
+             iteration < ITERATIONS;
+             iteration++) {
+
+            for (size_t i = 0; i < items.size(); i++) {
+
+                for (size_t j = i + 1;
+                     j < items.size();
+                     j++) {
+
+                    auto& a = items[i];
+                    auto& b = items[j];
+
+                    Vec normal;
+                    float penetration = 0.f;
+
+                    if (collide(
+                        a,
+                        b,
+                        normal,
+                        penetration
+                    )) {
+
+                        resolveCollision(
+                            a,
+                            b,
+                            normal,
+                            penetration
+                        );
+                    }
+                }
+            }
+
+            for (auto& item : items)
+                solveBoundaries(item);
+        }
+    }
+
+    // --------------------------------------------------
+    // Visual update
+    // --------------------------------------------------
+
+    void updateVisuals() {
+
+        for (auto& item : items) {
+
+            if (!item.vis)
+                continue;
+
+            item.vis->setPosition({
+                item.position.x,
+                item.position.y
+            });
+
+            item.vis->setRotation(
+                item.angle * 180.f / PI
+            );
+        }
     }
 
     // --------------------------------------------------
@@ -392,18 +946,26 @@ class ScreensaverLayer : public CCLayerColor {
     void fullReset() {
 
         maxItems = static_cast<int>(
-            Mod::get()->getSettingValue<int64_t>("item-count")
+            Mod::get()->getSettingValue<int64_t>(
+                "item-count"
+            )
         );
 
         playerChance = static_cast<int>(
-            Mod::get()->getSettingValue<int64_t>("player-chance")
+            Mod::get()->getSettingValue<int64_t>(
+                "player-chance"
+            )
         );
 
         allowDrop =
-            Mod::get()->getSettingValue<bool>("infinite-fall");
+            Mod::get()->getSettingValue<bool>(
+                "infinite-fall"
+            );
 
         physicsSpeed = static_cast<float>(
-            Mod::get()->getSettingValue<int64_t>("physics-speed")
+            Mod::get()->getSettingValue<int64_t>(
+                "physics-speed"
+            )
         ) / 10.f;
 
         if (physicsSpeed <= 0.f)
@@ -414,8 +976,7 @@ class ScreensaverLayer : public CCLayerColor {
             static_cast<int>(20.f / physicsSpeed)
         );
 
-        if (maxItems < 1)
-            maxItems = 1;
+        maxItems = std::max(1, maxItems);
 
         elapsed = 0.f;
         itemsMade = 0;
@@ -427,11 +988,10 @@ class ScreensaverLayer : public CCLayerColor {
         physicsLag = 0.f;
 
         pauseBeforeDrain =
-            5.f + (std::rand() % 1001) / 1000.f;
+            5.f + randomFloat(0.f, 1.f);
 
         nextSpawn = 0.f;
 
-        // Clean visuals
         for (auto& item : items) {
 
             if (item.vis)
@@ -439,25 +999,6 @@ class ScreensaverLayer : public CCLayerColor {
         }
 
         items.clear();
-
-        delete physWorld;
-
-        physWorld = nullptr;
-        ground = nullptr;
-
-        physWorld = new b2World({
-            0.f,
-            9.8f * physicsSpeed * 3.f
-        });
-
-        float W = winSize.width;
-        float H = winSize.height;
-
-        makeEdge(0, 0, 0, H, nullptr);
-        makeEdge(W, 0, W, H, nullptr);
-
-        if (!allowDrop)
-            makeEdge(0, H, W, H, &ground);
     }
 
     // --------------------------------------------------
@@ -490,14 +1031,9 @@ class ScreensaverLayer : public CCLayerColor {
                 "image-fit"
             );
 
-        GLubyte initAlpha = 0;
-
-        if (!CCLayerColor::initWithColor({
-            bgCol.r,
-            bgCol.g,
-            bgCol.b,
-            initAlpha
-        })) {
+        if (!CCLayerColor::initWithColor(
+            ccc4(bgCol.r, bgCol.g, bgCol.b, 0)
+        )) {
             return false;
         }
 
@@ -506,7 +1042,6 @@ class ScreensaverLayer : public CCLayerColor {
         this->setContentSize(winSize);
         this->setPosition(CCPointZero);
 
-        // Blur
         if (bgType == "blur" && BlurAPI::isBlurAPIEnabled())
             BlurAPI::addBlur(this);
 
@@ -544,11 +1079,16 @@ class ScreensaverLayer : public CCLayerColor {
         if (killed)
             return;
 
+        dt = clampf(dt, 0.f, 0.25f);
+
         if (!doneFade) {
 
             fadeIn += dt;
 
-            float t = std::min(fadeIn / 0.5f, 1.f);
+            float t = std::min(
+                fadeIn / 0.5f,
+                1.f
+            );
 
             if (t >= 1.f)
                 doneFade = true;
@@ -556,7 +1096,7 @@ class ScreensaverLayer : public CCLayerColor {
             if (bgType == "blur") {
 
                 setOpacity(
-                    static_cast<GLubyte>(180 * t)
+                    static_cast<GLubyte>(180.f * t)
                 );
 
             } else if (bgType == "color") {
@@ -580,15 +1120,15 @@ class ScreensaverLayer : public CCLayerColor {
             return;
         }
 
-        float W = winSize.width;
-        float H = winSize.height;
-
         elapsed += dt;
 
         float spawnDelay =
             static_cast<float>(spawnTicks) / 60.f;
 
-        while (itemsMade < maxItems && elapsed >= nextSpawn) {
+        while (
+            itemsMade < maxItems &&
+            elapsed >= nextSpawn
+        ) {
 
             addItem(false);
 
@@ -605,7 +1145,11 @@ class ScreensaverLayer : public CCLayerColor {
                 addItem(true);
         }
 
-        if (!allowDrop && !filled && itemsMade >= maxItems) {
+        if (
+            !allowDrop &&
+            !filled &&
+            itemsMade >= maxItems
+        ) {
 
             float spawnTime = maxItems * spawnDelay;
 
@@ -613,13 +1157,6 @@ class ScreensaverLayer : public CCLayerColor {
 
                 filled = true;
                 draining = true;
-
-                if (ground) {
-
-                    physWorld->DestroyBody(ground);
-
-                    ground = nullptr;
-                }
             }
         }
 
@@ -629,8 +1166,10 @@ class ScreensaverLayer : public CCLayerColor {
 
             for (const auto& item : items) {
 
-                if (item.phys->GetPosition().y * 40.f < H + 300.f)
+                if (item.position.y > -300.f) {
                     allGone = false;
+                    break;
+                }
             }
 
             if (allGone) {
@@ -641,41 +1180,35 @@ class ScreensaverLayer : public CCLayerColor {
             }
         }
 
-        if (allowDrop &&
-            elapsed > static_cast<float>(maxItems) * spawnDelay + 8.f) {
+        if (
+            allowDrop &&
+            elapsed > maxItems * spawnDelay + 8.f
+        ) {
 
             fullReset();
 
             return;
         }
 
-        const float STEP = 1.f / 60.f;
+        // Fixed timestep.
 
         physicsLag += dt;
 
-        while (physicsLag >= STEP) {
+        int steps = 0;
 
-            physWorld->Step(STEP, 8, 3);
+        while (
+            physicsLag >= FIXED_STEP &&
+            steps < 15
+        ) {
 
-            physicsLag -= STEP;
+            physicsStep(FIXED_STEP);
+
+            physicsLag -= FIXED_STEP;
+
+            steps++;
         }
 
-        for (auto& item : items) {
-
-            if (!item.vis)
-                continue;
-
-            auto pos = item.phys->GetPosition();
-
-            item.vis->setPosition(
-                pos.x * 40.f,
-                H - pos.y * 40.f
-            );
-
-            item.vis->setRotation(
-                item.phys->GetAngle() * 180.f / M_PI
-            );
-        }
+        updateVisuals();
     }
 
 public:
@@ -756,8 +1289,6 @@ public:
 
         if (bgType == "blur")
             BlurAPI::removeBlur(this);
-
-        delete physWorld;
     }
 };
 
@@ -787,7 +1318,9 @@ class $modify(OrbitScrsvrScene, CCScene) {
             return false;
 
         this->schedule(
-            schedule_selector(OrbitScrsvrScene::checkIdle),
+            schedule_selector(
+                OrbitScrsvrScene::checkIdle
+            ),
             0.f
         );
 
@@ -796,28 +1329,32 @@ class $modify(OrbitScrsvrScene, CCScene) {
 
     void checkIdle(float dt) {
 
-        auto scene = CCDirector::get()->getRunningScene();
+        auto scene =
+            CCDirector::get()->getRunningScene();
 
         if (!scene)
             return;
 
         bool inEditor =
-            scene->getChildByType<LevelEditorLayer>(0) != nullptr;
+            scene->getChildByType<LevelEditorLayer>(0)
+            != nullptr;
 
         bool inPlay =
-            scene->getChildByType<PlayLayer>(0) != nullptr;
+            scene->getChildByType<PlayLayer>(0)
+            != nullptr;
 
         if (inEditor || (inPlay && !pauseOpen) || ssActive) {
 
             idleTimer = 0.f;
-
             return;
         }
 
         idleTimer += dt;
 
         float timeout = static_cast<float>(
-            Mod::get()->getSettingValue<int64_t>("wait-time")
+            Mod::get()->getSettingValue<int64_t>(
+                "wait-time"
+            )
         );
 
         if (idleTimer < timeout)
@@ -831,7 +1368,6 @@ class $modify(OrbitScrsvrScene, CCScene) {
         if (ss) {
 
             ss->setZOrder(9999);
-
             this->addChild(ss);
 
         } else {
@@ -861,7 +1397,7 @@ class $modify(CCTouchDispatcher) {
 };
 
 // --------------------------------------------------
-// Keyboard dispatcher (not available in iOS bindings)
+// Keyboard dispatcher
 // --------------------------------------------------
 
 #ifndef GEODE_IS_IOS
@@ -894,8 +1430,9 @@ class $modify(CCKeyboardDispatcher) {
 
                 auto ss = scene->getChildByTag(2047);
 
-                if (ss)
+                if (ss) {
                     static_cast<ScreensaverLayer*>(ss)->kill();
+                }
             }
         }
 
@@ -941,8 +1478,9 @@ class $modify(PauseLayer) {
 
             auto ss = scene->getChildByTag(2047);
 
-            if (ss)
+            if (ss) {
                 static_cast<ScreensaverLayer*>(ss)->kill();
+            }
         }
 
         PauseLayer::onResume(sender);
