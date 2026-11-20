@@ -11,7 +11,7 @@
 #include <Geode/binding/SimplePlayer.hpp>
 #endif
 
-#include "BlurAPI.hpp"
+#include "../include/BlurAPI.hpp"
 
 #include <algorithm>
 #include <cmath>
