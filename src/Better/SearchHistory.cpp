@@ -278,42 +278,42 @@ namespace neo::searchHistory {
         // --------------------------------------------------
 
         void onSelect(CCObject* sender) {
-            if (!sender)
-                return;
+    if (!sender)
+        return;
 
-            auto node = static_cast<CCNode*>(sender);
-            auto query = node->getID();
+    auto node = static_cast<CCNode*>(sender);
+    auto query = node->getID();
 
-            if (query.empty())
-                return;
+    if (query.empty())
+        return;
 
-            auto scene = CCDirector::get()->getRunningScene();
+    auto scene = CCDirector::get()->getRunningScene();
 
-            if (!scene)
-                return;
+    if (!scene)
+        return;
 
-            auto searchLayer = typeinfo_cast<LevelSearchLayer*>(
-                scene->getChildByIDRecursive("LevelSearchLayer")
-            );
+    auto searchNode = scene->getChildByIDRecursive("LevelSearchLayer");
 
-            if (!searchLayer)
-                return;
+    if (!searchNode)
+        return;
 
-            auto input = typeinfo_cast<CCTextInputNode*>(
-                searchLayer->getChildByID("search-bar")
-            );
+    auto searchLayer = static_cast<LevelSearchLayer*>(searchNode);
 
-            if (!input)
-                return;
+    auto inputNode = searchLayer->getChildByID("search-bar");
 
-            input->setString(query);
+    if (!inputNode)
+        return;
 
-            // Close popup.
-            onClose(nullptr);
+    auto input = static_cast<CCTextInputNode*>(inputNode);
 
-            // Execute search.
-            searchLayer->onSearch(nullptr);
-        }
+    input->setString(query);
+
+    // Close popup.
+    onClose(nullptr);
+
+    // Execute search.
+    searchLayer->onSearch(nullptr);
+}
 
         // --------------------------------------------------
         // Clear history
