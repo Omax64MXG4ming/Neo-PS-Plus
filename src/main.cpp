@@ -5,7 +5,6 @@
 #include "connection/NeoConnectionFix.hpp"
 #include "backend/NeoBackend.hpp"
 #include "ui/NeoBackendLayer.hpp"
-#include "mainlevels/NeoMainLevelManager.hpp"
 #include "BetterIncludes.hpp"
 #include "updater/NeoUpdater.hpp"
 #ifndef GEODE_IS_IOS
@@ -339,31 +338,24 @@ $on_game(Loaded) {
 // NEO PS Plus Hooking INITIALIZATION
 // --------------------------------------------------
 
-$on_mod(Loaded) {
+// $on_mod(Loaded) {
 
-auto& levelManager = neo::mainlevels::NeoMainLevelManager::get();
+   // neo::backend::NeoBackend::get().get(
+      //  "/",
+    //    [](neo::backend::NeoResponse response) {
+   //         if (!response.success) {
+            //    log::error(
+          //          "[NeoBackend] Request failed: {}",
+             //       response.error
+           //     );
+          //      return;
+        //    }
 
-log::info(
-    "[NeoMainLevels] Registered {} levels",
-    levelManager.getLevels().size()
-);
-    
-    neo::backend::NeoBackend::get().get(
-        "/",
-        [](neo::backend::NeoResponse response) {
-            if (!response.success) {
-                log::error(
-                    "[NeoBackend] Request failed: {}",
-                    response.error
-                );
-                return;
-            }
-
-            log::info(
-                "[NeoBackend] HTTP {}",
-                response.httpCode
-            );
-        }
-    );
-};
+       //     log::info(
+               // "[NeoBackend] HTTP {}",
+          //      response.httpCode
+         //   );
+    //    }
+  //  );
+// };
 #endif
