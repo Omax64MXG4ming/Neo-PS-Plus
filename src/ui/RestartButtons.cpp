@@ -109,13 +109,11 @@ void RestartButtons::reload() {
 // --------------------------------------------------
 
 void RestartButtons::setup(
-    CCMenu* menu,
-    CCObject* target,
-    SEL_MenuHandler restartCallback,
-    SEL_MenuHandler reloadCallback
+    cocos2d::CCMenu* menu,
+    cocos2d::CCObject* target,
+    cocos2d::SEL_MenuHandler restartCallback,
+    cocos2d::SEL_MenuHandler reloadCallback
 ) {
-    if (!menu || !target)
-        return;
 
     // ----------------------------------------------
     // RESTART BUTTON
