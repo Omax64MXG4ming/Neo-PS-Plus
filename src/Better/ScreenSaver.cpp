@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <system_error>
@@ -349,12 +350,15 @@ void loadBackgroundImage() {
     // Fallback visual
     // --------------------------------------------------
 
+      // --------------------------------------------------
+    // Fallback visual
+    // --------------------------------------------------
+
     CCNode* createFallbackVisual(
         float radius,
         bool player,
         int orbIdx
     ) {
-
         static const ccColor3B orbColors[11] = {
             {255, 190, 50},
             {255, 90, 90},
@@ -369,80 +373,219 @@ void loadBackgroundImage() {
             {220, 220, 220}
         };
 
-        ccColor3B color = player
+        const ccColor3B color = player
             ? ccc3(70, 170, 255)
             : orbColors[
                 std::max(0, std::min(orbIdx, 10))
             ];
 
-        float size = radius * 2.f;
+        const float diameter = radius * 2.f;
 
-        auto visual = CCLayerColor::create(
-            ccc4(color.r, color.g, color.b, 255),
-            size,
-            size
+        // The player and the last item are box-shaped.
+        if (player || orbIdx == 10) {
+            auto visual = CCLayerColor::create(
+                ccc4(color.r, color.g, color.b, 255),
+                diameter,
+                diameter
+            );
+
+            if (!visual)
+                return nullptr;
+
+            visual->setAnchorPoint({0.5f, 0.5f});
+            return visual;
+        }
+
+        // Create a circular orb texture.
+        constexpr unsigned int TEXTURE_SIZE = 96;
+        constexpr float CENTER = TEXTURE_SIZE / 2.f;
+        constexpr float INV_CENTER = 1.f / CENTER;
+
+        std::vector<GLubyte> pixels(
+            TEXTURE_SIZE * TEXTURE_SIZE * 4,
+            0
         );
 
-        if (!visual)
+        for (unsigned int y = 0; y < TEXTURE_SIZE; y++) {
+            for (unsigned int x = 0; x < TEXTURE_SIZE; x++) {
+                const float dx =
+                    (static_cast<float>(x) + 0.5f - CENTER) *
+                    INV_CENTER;
+
+                const float dy =
+                    (static_cast<float>(y) + 0.5f - CENTER) *
+                    INV_CENTER;
+
+                const float distance = std::sqrt(
+                    dx * dx + dy * dy
+                );
+
+                // Soft outer glow.
+                const float glow = clampValue(
+                    (1.08f - distance) / 0.38f,
+                    0.f,
+                    1.f
+                ) * 0.30f;
+
+                // Main colored ring.
+                const float ring = clampValue(
+                    1.f - std::abs(distance - 0.72f) / 0.13f,
+                    0.f,
+                    1.f
+                );
+
+                // Colored center.
+                const float core = clampValue(
+                    (0.61f - distance) / 0.12f,
+                    0.f,
+                    1.f
+                );
+
+                const float alpha = std::max(
+                    glow,
+                    std::max(ring, core * 0.92f)
+                );
+
+                if (alpha <= 0.f)
+                    continue;
+
+                // Blend the orb color with a white highlight.
+                const float highlight = clampValue(
+                    (0.42f - distance) / 0.30f,
+                    0.f,
+                    0.75f
+                );
+
+                const float red =
+                    color.r + (255.f - color.r) * highlight;
+
+                const float green =
+                    color.g + (255.f - color.g) * highlight;
+
+                const float blue =
+                    color.b + (255.f - color.b) * highlight;
+
+                const unsigned int index =
+                    (y * TEXTURE_SIZE + x) * 4;
+
+                // Premultiplied alpha.
+                pixels[index + 0] =
+                    static_cast<GLubyte>(red * alpha);
+
+                pixels[index + 1] =
+                    static_cast<GLubyte>(green * alpha);
+
+                pixels[index + 2] =
+                    static_cast<GLubyte>(blue * alpha);
+
+                pixels[index + 3] =
+                    static_cast<GLubyte>(alpha * 255.f);
+            }
+        }
+
+        auto texture = new CCTexture2D();
+
+        if (!texture->initWithData(
+            pixels.data(),
+            kCCTexture2DPixelFormat_RGBA8888,
+            TEXTURE_SIZE,
+            TEXTURE_SIZE,
+            CCSize(
+                static_cast<float>(TEXTURE_SIZE),
+                static_cast<float>(TEXTURE_SIZE)
+            )
+        )) {
+            delete texture;
+            return nullptr;
+        }
+
+        texture->autorelease();
+
+        auto sprite = CCSprite::createWithTexture(texture);
+
+        if (!sprite)
             return nullptr;
 
-        visual->setAnchorPoint({0.5f, 0.5f});
+        sprite->setAnchorPoint({0.5f, 0.5f});
 
-        return visual;
+        sprite->setScale(
+            diameter / static_cast<float>(TEXTURE_SIZE)
+        );
+
+        return sprite;
     }
 
     // --------------------------------------------------
     // Create visual
     // --------------------------------------------------
 
+    CCNode* createItemVisual(
+        bool spawnPlayer,
+        int orbIdx,
+        float radius
+    ) {
+        // Player cube.
+        if (spawnPlayer) {
+            auto gm = GameManager::get();
 
-CCNode* createItemVisual(
-    bool spawnPlayer,
-    int orbIdx,
-    float radius
-) {
-    if (spawnPlayer) {
-        auto gm = GameManager::get();
-
-        auto sp = SimplePlayer::create(
-            gm->getPlayerFrame()
-        );
-
-        if (sp) {
-            sp->setColors(
-                gm->colorForIdx(gm->getPlayerColor()),
-                gm->colorForIdx(gm->getPlayerColor2())
-            );
-
-            if (gm->getPlayerGlow()) {
-                sp->setGlowOutline(
-                    gm->colorForIdx(gm->getPlayerGlowColor())
+            if (gm) {
+                auto player = SimplePlayer::create(
+                    gm->getPlayerFrame()
                 );
+
+                if (player) {
+                    player->setColors(
+                        gm->colorForIdx(gm->getPlayerColor()),
+                        gm->colorForIdx(gm->getPlayerColor2())
+                    );
+
+                    if (gm->getPlayerGlow()) {
+                        player->setGlowOutline(
+                            gm->colorForIdx(
+                                gm->getPlayerGlowColor()
+                            )
+                        );
+                    }
+
+                    player->setScale(1.f);
+                    return player;
+                }
             }
 
-            sp->setScale(1.f);
-            return sp;
+            return createFallbackVisual(
+                radius,
+                true,
+                -1
+            );
         }
-    } else {
+
         if (orbIdx < 0 || orbIdx >= 11)
             return nullptr;
 
-        auto obj = GameObject::createWithKey(
+        // Keep native GameObject rendering on desktop.
+        // Do not reference createWithKey on Android/iOS:
+        // the GD 2.2091 bindings do not provide its implementation there.
+#if defined(GEODE_IS_WINDOWS) || defined(GEODE_IS_MACOS)
+
+        auto object = GameObject::createWithKey(
             orbIds[orbIdx]
         );
 
-        if (obj) {
-            obj->setScale(1.f);
-            return obj;
+        if (object) {
+            object->setScale(1.f);
+            return object;
         }
-    }
 
-    return createFallbackVisual(
-        radius,
-        spawnPlayer,
-        orbIdx
-    );
-}
+#endif
+
+        // Mobile fallback: generated circular visuals,
+        // without linking GameObject::createWithKey().
+        return createFallbackVisual(
+            radius,
+            false,
+            orbIdx
+        );
+    }
 
 
     // --------------------------------------------------
