@@ -835,7 +835,7 @@ class ScreensaverLayer : public CCLayerColor {
                 item.velocity.x *= -RESTITUTION;
         }
 
-        if (!allowDrop && item.position.y - extentY < 0.f) {
+        if (floorEnabled && item.position.y - extentY < 0.f) {
 
             item.position.y = extentY;
 
@@ -961,7 +961,8 @@ class ScreensaverLayer : public CCLayerColor {
             Mod::get()->getSettingValue<bool>(
                 "infinite-fall"
             );
-
+        floorEnabled = !allowDrop;
+        
         physicsSpeed = static_cast<float>(
             Mod::get()->getSettingValue<int64_t>(
                 "physics-speed"
@@ -1157,6 +1158,7 @@ class ScreensaverLayer : public CCLayerColor {
 
                 filled = true;
                 draining = true;
+                floorEnabled = false;
             }
         }
 
