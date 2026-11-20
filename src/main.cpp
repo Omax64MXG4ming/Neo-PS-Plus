@@ -2,68 +2,13 @@
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/loader/SettingV3.hpp>
 
-#include "connection/NeoConnectionFix.hpp"
-#include "backend/NeoBackend.hpp"
 #include "ui/NeoBackendLayer.hpp"
-#include "BetterIncludes.hpp"
+#include "ui/RestartButtons.hpp"
 #include "updater/NeoUpdater.hpp"
+#include "BetterIncludes.hpp"
 #ifndef GEODE_IS_IOS
+
 using namespace geode::prelude;
-
-static bool isReload = false;
-
-// --------------------------------------------------
-// RESTART
-// --------------------------------------------------
-
-void restart() {
-    auto scene = CCDirector::get()->getRunningScene();
-    if (!scene) return;
-
-    if (
-        scene->getChildByID("restart-popup") ||
-        scene->getChildByID("reload-popup")
-    ) return;
-
-    geode::createQuickPopup(
-        "Restart Game",
-        "Are you sure you want to <cg>restart</c>?",
-        "Cancel",
-        "Yes",
-        [](auto, bool btn2) {
-            if (btn2) {
-                utils::game::restart(true);
-            }
-        }
-    )->setID("restart-popup");
-}
-
-// --------------------------------------------------
-// RELOAD TEXTURES
-// --------------------------------------------------
-
-void reload() {
-    auto scene = CCDirector::get()->getRunningScene();
-    if (!scene) return;
-
-    if (
-        scene->getChildByID("restart-popup") ||
-        scene->getChildByID("reload-popup")
-    ) return;
-
-    geode::createQuickPopup(
-        "Reload Textures",
-        "Are you sure you want to <cj>reload textures</c>?",
-        "Cancel",
-        "Yes",
-        [](auto, bool btn2) {
-            if (btn2) {
-                isReload = true;
-                GameManager::get()->reloadAll(false, false, true);
-            }
-        }
-    )->setID("reload-popup");
-}
 
 // --------------------------------------------------
 // MENU LAYER
@@ -71,14 +16,21 @@ void reload() {
 
 class $modify(AltMenuLayer, MenuLayer) {
 
+    // ----------------------------------------------
+    // SCENE
+    // ----------------------------------------------
+
     static CCScene* scene(bool p0) {
-        if (!isReload) {
+        if (!neo::ui::RestartButtons::consumeReloadFlag()) {
             return MenuLayer::scene(p0);
         }
 
-        isReload = false;
         return MenuLayer::scene(false);
     }
+
+    // ----------------------------------------------
+    // INIT
+    // ----------------------------------------------
 
     bool init() {
         if (!MenuLayer::init()) {
@@ -95,9 +47,11 @@ class $modify(AltMenuLayer, MenuLayer) {
 
         if (!menu) {
             menu = CCMenu::create();
+
             menu->setID("close-menu");
             menu->setContentSize({33.25f, 200.f});
             menu->ignoreAnchorPointForPosition(false);
+
             this->addChild(menu);
         }
 
@@ -123,21 +77,24 @@ class $modify(AltMenuLayer, MenuLayer) {
         if (Mod::get()->getSettingValue<bool>("exit")) {
 
             if (!menu->getChildByID("close-button")) {
-                auto sprite =
-                    CCSprite::createWithSpriteFrameName(
-                        "GJ_closeBtn_001.png"
-                    );
-
-                sprite->setScale(0.7f);
-
-                auto button = CCMenuItemSpriteExtra::create(
-                    sprite,
-                    this,
-                    menu_selector(MenuLayer::onQuit)
+                auto sprite = CCSprite::createWithSpriteFrameName(
+                    "GJ_closeBtn_001.png"
                 );
 
-                button->setID("close-button");
-                menu->addChild(button);
+                if (sprite) {
+                    sprite->setScale(0.7f);
+
+                    auto button = CCMenuItemSpriteExtra::create(
+                        sprite,
+                        this,
+                        menu_selector(MenuLayer::onQuit)
+                    );
+
+                    if (button) {
+                        button->setID("close-button");
+                        menu->addChild(button);
+                    }
+                }
             }
 
         } else {
@@ -145,66 +102,21 @@ class $modify(AltMenuLayer, MenuLayer) {
         }
 
         // ------------------------------------------
-        // RESTART BUTTON
+        // RESTART / RELOAD BUTTONS
         // ------------------------------------------
 
-        if (Mod::get()->getSettingValue<bool>("restart")) {
-
-            if (!menu->getChildByID("restart-button")) {
-                auto sprite =
-                    CCSprite::createWithSpriteFrameName(
-                        "GJ_updateBtn_001.png"
-                    );
-
-                sprite->setScale(0.7f);
-
-                auto button = CCMenuItemSpriteExtra::create(
-                    sprite,
-                    this,
-                    menu_selector(AltMenuLayer::onRestart)
-                );
-
-                button->setID("restart-button");
-                menu->addChild(button);
-            }
-
-        } else {
-            menu->removeChildByID("restart-button");
-        }
-
-        // ------------------------------------------
-        // RELOAD TEXTURES BUTTON
-        // ------------------------------------------
-
-        if (Mod::get()->getSettingValue<bool>("reload-textures")) {
-
-            if (!menu->getChildByID("reload-button")) {
-                auto sprite =
-                    CCSprite::createWithSpriteFrameName(
-                        "GJ_replayBtn_001.png"
-                    );
-
-                sprite->setScale(0.525f);
-
-                auto button = CCMenuItemSpriteExtra::create(
-                    sprite,
-                    this,
-                    menu_selector(AltMenuLayer::onReload)
-                );
-
-                button->setID("reload-button");
-                menu->addChild(button);
-            }
-
-        } else {
-            menu->removeChildByID("reload-button");
-        }
+        neo::ui::RestartButtons::setup(
+            menu,
+            this,
+            menu_selector(AltMenuLayer::onRestart),
+            menu_selector(AltMenuLayer::onReload)
+        );
 
         // ------------------------------------------
         // SIZE
         // ------------------------------------------
 
-        auto scale =
+        const auto scale =
             Mod::get()->getSettingValue<double>("size");
 
         menu->setScale(static_cast<float>(scale));
@@ -231,23 +143,25 @@ class $modify(AltMenuLayer, MenuLayer) {
                     menu_selector(AltMenuLayer::onNeoInspector)
                 );
 
-                auto inspectorMenu = CCMenu::create(
-                    inspectorButton,
-                    nullptr
-                );
+                if (inspectorButton) {
 
-                if (inspectorMenu) {
-
-                    inspectorMenu->setID("neo-inspector-menu");
-
-                    inspectorMenu->setPosition(
-                        ccp(
-                            winSize.width - 65.0f,
-                            winSize.height - 35.0f
-                        )
+                    auto inspectorMenu = CCMenu::create(
+                        inspectorButton,
+                        nullptr
                     );
 
-                    this->addChild(inspectorMenu, 100);
+                    if (inspectorMenu) {
+                        inspectorMenu->setID("neo-inspector-menu");
+
+                        inspectorMenu->setPosition(
+                            ccp(
+                                winSize.width - 65.0f,
+                                winSize.height - 35.0f
+                            )
+                        );
+
+                        this->addChild(inspectorMenu, 100);
+                    }
                 }
             }
         }
@@ -260,11 +174,11 @@ class $modify(AltMenuLayer, MenuLayer) {
     // ----------------------------------------------
 
     void onRestart(CCObject*) {
-        restart();
+        neo::ui::RestartButtons::restart();
     }
 
     void onReload(CCObject*) {
-        reload();
+        neo::ui::RestartButtons::reload();
     }
 
     void onNeoInspector(CCObject*) {
@@ -274,7 +188,7 @@ class $modify(AltMenuLayer, MenuLayer) {
 };
 
 // --------------------------------------------------
-// KEYBINDS
+// GAME LOADED
 // --------------------------------------------------
 
 $on_game(Loaded) {
@@ -286,76 +200,10 @@ $on_game(Loaded) {
     neo::updater::NeoUpdater::checkForUpdates();
 
     // ----------------------------------------------
-    // RESTART KEYBIND
+    // RESTART / RELOAD KEYBINDS
     // ----------------------------------------------
 
-    listenForKeybindSettingPresses(
-        "restart-keybind",
-        [](Keybind const& keybind, bool down, bool repeat, double timestamp) {
-
-            auto scene = CCDirector::get()->getRunningScene();
-            if (!scene) return;
-
-            bool anywhere =
-                Mod::get()->getSettingValue<bool>("keybind_anywhere");
-
-            bool allowed = anywhere
-                ? LevelEditorLayer::get() == nullptr
-                : scene->getChildByID("MenuLayer") != nullptr;
-
-            if (allowed && down && !repeat) {
-                restart();
-            }
-        }
-    );
-
-    // ----------------------------------------------
-    // RELOAD TEXTURES KEYBIND
-    // ----------------------------------------------
-
-    listenForKeybindSettingPresses(
-        "reload-keybind",
-        [](Keybind const& keybind, bool down, bool repeat, double timestamp) {
-
-            auto scene = CCDirector::get()->getRunningScene();
-            if (!scene) return;
-
-            bool anywhere =
-                Mod::get()->getSettingValue<bool>("keybind_anywhere");
-
-            bool allowed = anywhere
-                ? LevelEditorLayer::get() == nullptr
-                : scene->getChildByID("MenuLayer") != nullptr;
-
-            if (allowed && down && !repeat) {
-                reload();
-            }
-        }
-    );
+    neo::ui::RestartButtons::registerKeybinds();
 }
 
-// --------------------------------------------------
-// NEO PS Plus Hooking INITIALIZATION
-// --------------------------------------------------
-
-// $on_mod(Loaded) {
-
-   // neo::backend::NeoBackend::get().get(
-      //  "/",
-    //    [](neo::backend::NeoResponse response) {
-   //         if (!response.success) {
-            //    log::error(
-          //          "[NeoBackend] Request failed: {}",
-             //       response.error
-           //     );
-          //      return;
-        //    }
-
-       //     log::info(
-               // "[NeoBackend] HTTP {}",
-          //      response.httpCode
-         //   );
-    //    }
-  //  );
-// };
 #endif
