@@ -6,7 +6,6 @@
 #include "../config/NeoConfig.hpp"
 
 namespace neo::intercept {
-
 class NeoGDIntercept {
 public:
     static uint64_t requestStarted(
@@ -15,13 +14,11 @@ public:
         const std::map<std::string, std::string>& headers = {},
         const std::string& body = ""
     );
-
     static void requestCompleted(
         uint64_t requestID,
         int responseCode,
         const std::string& responseBody = ""
     );
-
     static void requestFailed(
         uint64_t requestID,
         const std::string& error
