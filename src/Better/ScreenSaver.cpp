@@ -11,7 +11,7 @@
 #include <Geode/binding/SimplePlayer.hpp>
 #endif
 
-#include "../BlurAPI.hpp"
+#include "BlurAPI.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -262,55 +262,56 @@ class ScreensaverLayer : public CCLayerColor {
     // Background image
     // --------------------------------------------------
 
-    void loadBackgroundImage() {
+void loadBackgroundImage() {
 
-        if (bgSprite) {
-            bgSprite->removeFromParentAndCleanup(true);
-            bgSprite = nullptr;
-        }
-
-        if (bgType != "image")
-            return;
-
-        auto imgPath =
-            Mod::get()->getSettingValue<std::filesystem::path>(
-                "image-path"
-            );
-
-        std::error_code ec;
-
-        if (
-            imgPath.empty() ||
-            !std::filesystem::exists(imgPath, ec) ||
-            ec
-        ) {
-            return;
-        }
-
-        auto tex = CCTextureCache::get()->addImage(
-            imgPath.string().c_str(),
-            false
-        );
-
-        if (!tex)
-            return;
-
-        bgSprite = CCSprite::createWithTexture(tex);
-
-        if (!bgSprite)
-            return;
-
-        bgSprite->setAnchorPoint({0.5f, 0.5f});
-
-        bgSprite->setPosition({
-            winSize.width / 2.f,
-            winSize.height / 2.f
-        });
-
-        fitBackgroundImage();
-
-        this->addChild(bgSprite, -1);
+    if (bgSprite) {
+        bgSprite->removeFromParentAndCleanup(true);
+        bgSprite = nullptr;
     }
+
+    if (bgType != "image")
+        return;
+
+    auto imgPath = Mod::get()->getSettingValue<std::string>(
+        "image-path"
+    );
+
+    std::filesystem::path imagePath(imgPath);
+
+    std::error_code ec;
+
+    if (
+        imagePath.empty() ||
+        !std::filesystem::exists(imagePath, ec) ||
+        ec
+    ) {
+        return;
+    }
+
+    auto tex = CCTextureCache::get()->addImage(
+        imagePath.string().c_str(),
+        false
+    );
+
+    if (!tex)
+        return;
+
+    bgSprite = CCSprite::createWithTexture(tex);
+
+    if (!bgSprite)
+        return;
+
+    bgSprite->setAnchorPoint({0.5f, 0.5f});
+
+    bgSprite->setPosition({
+        winSize.width / 2.f,
+        winSize.height / 2.f
+    });
+
+    fitBackgroundImage();
+
+    this->addChild(bgSprite, -1);
+}
 
     void fitBackgroundImage() {
 
