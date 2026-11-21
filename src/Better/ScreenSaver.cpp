@@ -167,31 +167,57 @@ class ScreensaverLayer : public CCLayerColor {
             body->ApplyLinearImpulse({(10 - std::rand()%21)*0.05f, 0.f}, body->GetWorldCenter(), true);
         }
 
-        // visual
+                // visual
         CCNode* visual = nullptr;
+
         if(spawnPlayer) {
             auto gm = GameManager::get();
             auto sp = SimplePlayer::create(gm->getPlayerFrame());
+
             if(sp) {
-                sp->setColors(gm->colorForIdx(gm->getPlayerColor()), gm->colorForIdx(gm->getPlayerColor2()));
-                if(gm->getPlayerGlow())
-                    sp->setGlowOutline(gm->colorForIdx(gm->getPlayerGlowColor()));
+                sp->setColors(
+                    gm->colorForIdx(gm->getPlayerColor()),
+                    gm->colorForIdx(gm->getPlayerColor2())
+                );
+
+                if(gm->getPlayerGlow()) {
+                    sp->setGlowOutline(
+                        gm->colorForIdx(gm->getPlayerGlowColor())
+                    );
+                }
+
                 sp->setScale(1.0f);
                 sp->setPosition({-9999.f, -9999.f});
+
                 this->addChild(sp, 3);
                 visual = sp;
             }
         } else {
+
+#if !defined(GEODE_IS_IOS)
+
             auto obj = GameObject::createWithKey(orbIds[orbIdx]);
+
             if(obj) {
                 obj->setScale(1.0f);
                 obj->setPosition({-9999.f, -9999.f});
+
                 this->addChild(obj, 2);
                 visual = obj;
             }
+
+#endif
+
         }
-        items.push_back({body, visual, rad, orbIdx, spawnPlayer});
-    }
+
+        items.push_back({
+            body,
+            visual,
+            rad,
+            orbIdx,
+            spawnPlayer
+        });
+     }
 
     // reset
     void fullReset() {
