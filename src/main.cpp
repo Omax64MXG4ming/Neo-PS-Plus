@@ -43,17 +43,19 @@ class $modify(AltMenuLayer, MenuLayer) {
         // BUTTON CONTAINER
         // ------------------------------------------
 
-        auto menu = this->getChildByID("close-menu");
+auto menu = typeinfo_cast<CCMenu*>(
+    this->getChildByID("close-menu")
+);
 
-        if (!menu) {
-            menu = CCMenu::create();
+if (!menu) {
+    menu = CCMenu::create();
 
-            menu->setID("close-menu");
-            menu->setContentSize({33.25f, 200.f});
-            menu->ignoreAnchorPointForPosition(false);
+    menu->setID("close-menu");
+    menu->setContentSize({33.25f, 200.f});
+    menu->ignoreAnchorPointForPosition(false);
 
-            this->addChild(menu);
-        }
+    this->addChild(menu);
+}
 
         menu->setAnchorPoint({0.f, 1.f});
 
