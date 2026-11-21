@@ -4,7 +4,10 @@
 #include <Geode/modify/PauseLayer.hpp>
 #include <Geode/modify/LevelEditorLayer.hpp>
 #include <Geode/modify/CCTouchDispatcher.hpp>
+
+#if !defined(GEODE_IS_IOS)
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
+#endif
 #include "../include/BlurAPI.hpp"
 #include <box2d/box2d.h>
 
@@ -81,7 +84,9 @@ class ScreensaverLayer : public CCLayerColor {
             bgSprite = nullptr;
         }
         if(bgType != "image") return;
-        auto imgPath = Mod::get()->getSettingValue<std::filesystem::path>("image-path");
+        auto imgPath = std::filesystem::path(
+    Mod::get()->getSettingValue<std::string>("image-path")
+);
         if(imgPath.empty() || !std::filesystem::exists(imgPath)) return;
         auto tex = CCTextureCache::get()->addImage(imgPath.string().c_str(), false);
         if(!tex) return;
@@ -368,7 +373,10 @@ public:
     }
     void keyDown(enumKeyCodes, double) override { kill(); }
     void keyBackClicked() override { kill(); }
-    void scrollWheel(float, float) override { kill(); }
+    bool scrollWheel(float y, float x) override {
+    kill();
+    return true;
+}
 
     ~ScreensaverLayer() override {
         if(bgType == "blur")
@@ -396,7 +404,11 @@ class $modify(OrbitScrsvrScene, CCScene) {
         bool inPlay = scene->getChildByType<PlayLayer>(0) != nullptr;
 
         // only activate screensaver if not in active gameplay/editor, not already running
-        if(inEditor || (inPlay && !pauseOpen) || ssActive) {
+#if defined(GEODE_IS_IOS)
+        if (inEditor || inPlay || ssActive) {
+#else
+        if (inEditor || (inPlay && !pauseOpen) || ssActive) {
+#endif
             idleTimer = 0.f;
             return;
         }
@@ -427,46 +439,75 @@ class $modify(CCTouchDispatcher) {
     }
 };
 
-// any key also resets idle timer and removes screensaver if here
+#if !defined(GEODE_IS_IOS)
+
 class $modify(CCKeyboardDispatcher) {
-    bool dispatchKeyboardMSG(enumKeyCodes key, bool down, bool repeat, double ts) {
-        bool result = CCKeyboardDispatcher::dispatchKeyboardMSG(key, down, repeat, ts);
-        if(down && !repeat) {
+    bool dispatchKeyboardMSG(
+        enumKeyCodes key,
+        bool down,
+        bool repeat,
+        double ts
+    ) {
+        bool result = CCKeyboardDispatcher::dispatchKeyboardMSG(
+            key, down, repeat, ts
+        );
+
+        if (down && !repeat) {
             idleTimer = 0.f;
+
             auto scene = CCDirector::get()->getRunningScene();
-            if(scene) {
+
+            if (scene) {
                 auto ss = scene->getChildByTag(2047);
-                if(ss)
+
+                if (ss) {
                     static_cast<ScreensaverLayer*>(ss)->kill();
+                }
             }
         }
+
         return result;
     }
 };
+
+#endif
 
 // when PauseLayer opens and closes AND maintain proper idle state
 class $modify(PauseLayer) {
     void customSetup() {
         PauseLayer::customSetup();
+
         pauseOpen = true;
         idleTimer = 0.f;
     }
+
+#if !defined(GEODE_IS_IOS)
+
     void onQuit(CCObject* sender) {
         pauseOpen = false;
         idleTimer = 0.f;
+
         PauseLayer::onQuit(sender);
     }
+
     void onResume(CCObject* sender) {
         pauseOpen = false;
         idleTimer = 0.f;
+
         auto scene = CCDirector::get()->getRunningScene();
-        if(scene) {
+
+        if (scene) {
             auto ss = scene->getChildByTag(2047);
-            if(ss)
+
+            if (ss) {
                 static_cast<ScreensaverLayer*>(ss)->kill();
+            }
         }
+
         PauseLayer::onResume(sender);
     }
+
+#endif
 };
 
 // reset idle timer
