@@ -9,3 +9,9 @@
 
 * Auto Updater for the Mod
 <img width="2400" height="1080" alt="108328" src="https://github.com/user-attachments/assets/c801ac2a-d4dc-41ca-89db-a167bcd8f540" />
+
+* Fixes
+<img width="2400" height="1080" alt="112118" src="https://github.com/user-attachments/assets/5919de98-4121-4049-b099-fce4f4e0dd0c" />
+
+* Ultimate LDM
+<img width="2400" height="1080" alt="112119" src="https://github.com/user-attachments/assets/80a93d0a-be8b-479a-8dc1-0122b3b2faf0" />
