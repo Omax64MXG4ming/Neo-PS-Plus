@@ -35,6 +35,10 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
 # Mod binary
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 cmake_policy(SET CMP0069 NEW)
