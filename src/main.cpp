@@ -4,8 +4,8 @@
 
 #include "ui/NeoBackendLayer.hpp"
 #include "ui/RestartButtons.hpp"
-#include "updater/NeoUpdater.hpp"
 #include "BetterIncludes.hpp"
+#include "updater/NeoUpdater.hpp"
 #ifndef GEODE_IS_IOS
 
 using namespace geode::prelude;
@@ -191,15 +191,11 @@ if (!menu) {
 // --------------------------------------------------
 // GAME LOADED
 // --------------------------------------------------
-
 $on_game(Loaded) {
-
     // ----------------------------------------------
     // NEO PS PLUS UPDATER
     // ----------------------------------------------
-
-    neo::updater::NeoUpdater::checkForUpdates();
-
+neo::updater::NeoUpdater::checkForUpdates();
     // ----------------------------------------------
     // RESTART / RELOAD KEYBINDS
     // ----------------------------------------------
