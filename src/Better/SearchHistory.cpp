@@ -19,73 +19,102 @@ namespace neo::searchHistory {
     // Storage
     // --------------------------------------------------
 
-    static std::string getHistoryPath() {
-        return (Mod::get()->getSaveDir() / "history.txt").string();
-    }
+// --------------------------------------------------
+// Storage
+// --------------------------------------------------
 
-    static std::vector<std::string> getHistory() {
-        std::vector<std::string> history;
+static std::filesystem::path getHistoryPath() {
+    auto dir = std::filesystem::path(
+        Mod::get()->getSaveDir().string()
+    );
 
-        std::ifstream file(getHistoryPath());
-        if (!file.is_open())
-            return history;
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
 
-        std::string line;
+    return dir / "history.txt";
+}
 
-        while (std::getline(file, line)) {
-            if (!line.empty()) {
-                history.push_back(line);
-            }
+static std::vector<std::string> getHistory() {
+    std::vector<std::string> history;
 
-            if (history.size() >= MAX_HISTORY)
-                break;
-        }
+    auto path = getHistoryPath();
 
+    std::ifstream file(path);
+
+    if (!file.is_open())
         return history;
+
+    std::string line;
+
+    while (std::getline(file, line)) {
+        if (!line.empty())
+            history.push_back(line);
+
+        if (history.size() >= MAX_HISTORY)
+            break;
     }
 
-    static void saveHistory(
-        std::vector<std::string> const& history
-    ) {
-        std::ofstream file(getHistoryPath(), std::ios::trunc);
+    return history;
+}
 
-        if (!file.is_open())
-            return;
+static void saveHistory(
+    std::vector<std::string> const& history
+) {
+    auto path = getHistoryPath();
 
-        for (auto const& entry : history) {
-            file << entry << '\n';
-        }
+    std::ofstream file(
+        path,
+        std::ios::out | std::ios::trunc
+    );
+
+    if (!file.is_open()) {
+        log::error(
+            "SearchHistory: Cannot open history file: {}",
+            path.string()
+        );
+        return;
     }
+
+    for (auto const& entry : history) {
+        file << entry << '\n';
+    }
+
+    file.flush();
+
+    if (!file.good()) {
+        log::error("SearchHistory: Failed to write history.");
+        return;
+    }
+
+    log::info(
+        "SearchHistory: Saved {} searches.",
+        history.size()
+    );
+}
 
     // --------------------------------------------------
     // History management
     // --------------------------------------------------
+    
+static void pushHistory(std::string const& text) {
+    if (text.empty())
+        return;
 
-    static void pushHistory(std::string const& text) {
-        if (text.empty())
-            return;
+    // Ignore whitespace-only searches.
+    if (text.find_first_not_of(" \t\r\n") == std::string::npos)
+        return;
 
-        // Ignore whitespace-only searches.
-        if (text.find_first_not_of(" \t\r\n") == std::string::npos)
-            return;
+    auto history = getHistory();
 
-        auto history = getHistory();
+    // Insert newest search first.
+    history.insert(history.begin(), text);
 
-        // Remove previous occurrence.
-        history.erase(
-            std::remove(history.begin(), history.end(), text),
-            history.end()
-        );
+    // Limit history size.
+    if (history.size() > MAX_HISTORY)
+        history.resize(MAX_HISTORY);
 
-        // Insert newest search first.
-        history.insert(history.begin(), text);
-
-        // Limit history size.
-        if (history.size() > MAX_HISTORY)
-            history.resize(MAX_HISTORY);
-
-        saveHistory(history);
-    }
+    saveHistory(history);
+}
 
     static void clearHistory() {
         saveHistory({});
