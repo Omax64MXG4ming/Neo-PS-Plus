@@ -115,11 +115,6 @@ static void pushHistory(std::string const& text) {
 
     saveHistory(history);
 }
-
-    static void clearHistory() {
-        saveHistory({});
-    }
-
     // --------------------------------------------------
     // Popup
     // --------------------------------------------------
@@ -432,34 +427,28 @@ this->addChild(menu, 100);
         }
 
         // Open history popup
-        void onHistory(CCObject*) {
-            auto scene = CCDirector::get()->getRunningScene();
-
-            if (!scene)
-                return;
-
-            auto popup = SearchHistoryPopup::create(getHistory());
-
-            if (popup) {
-                scene->addChild(
-                    popup,
-                    scene->getHighestChildZ() + 1
-                );
-            }
-        }
-
-        // Save searches
         void onSearch(CCObject* sender) {
-            auto input = typeinfo_cast<CCTextInputNode*>(
-                this->getChildByID("search-bar")
-            );
+    auto input = typeinfo_cast<CCTextInputNode*>(
+        this->getChildByID("search-bar")
+    );
 
-            if (input) {
-                pushHistory(input->getString());
-            }
+    if (input) {
+        auto query = input->getString();
 
-            LevelSearchLayer::onSearch(sender);
-        }
+        pushHistory(query);
+
+        log::info(
+            "SearchHistory: Search recorded: {}",
+            query
+        );
+    } else {
+        log::warn(
+            "SearchHistory: Search input not found."
+        );
+    }
+
+    LevelSearchLayer::onSearch(sender);
+}
     };
 
 }
