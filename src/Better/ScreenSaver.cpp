@@ -5,7 +5,7 @@
 #include <Geode/modify/LevelEditorLayer.hpp>
 #include <Geode/modify/CCTouchDispatcher.hpp>
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
-#include "../BlurAPI.hpp"
+#include "../include/BlurAPI.hpp"
 #include <box2d/box2d.h>
 
 using namespace geode::prelude;
