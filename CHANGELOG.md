@@ -2,7 +2,7 @@
 Added Orbit Pool ScreenSaver Configurable 
 Ultimate LDM Options 
 Layers + Better Fixes 
-Adjusted Updater Changes
+Adjusted Updater Changes 
 
 # 1.1.1
 Updated the Updater
