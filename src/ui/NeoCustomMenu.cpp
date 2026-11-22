@@ -92,29 +92,6 @@ protected:
             this->addChild(m_statusLabel, 2);
         }
 
-        
-// TITLE - Child of panel
-title->setPosition(ccp(0.f, 85.f));
-
-// DESCRIPTION - Child of panel
-description->setPosition(ccp(0.f, 40.f));
-
-// STATUS - Child of this
-m_statusLabel->setPosition(
-    ccp(center.x, center.y + 15.f)
-);
-
-// TEST BUTTON - Child of menu
-testButton->setPosition(
-    ccp(center.x, center.y - 35.f)
-);
-
-// CLOSE BUTTON - Child of menu
-closeButton->setPosition(
-    ccp(center.x + 150.f, center.y + 100.f)
-);
-
-
         // ------------------------------------------
         // BUTTON MENU
         // ------------------------------------------
@@ -154,7 +131,7 @@ closeButton->setPosition(
             }
         }
 
-        // ------------------------------------------
+        // -----------------------------------------
         // CLOSE BUTTON
         // ------------------------------------------
 
