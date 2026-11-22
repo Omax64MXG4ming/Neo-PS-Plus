@@ -12,13 +12,16 @@
 
 using namespace geode::prelude;
 
-#include <Geode/Geode.hpp>
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 
 #include "menu/CobaltMenu.hpp"
 #include "features/CobaltState.hpp"
 
 using namespace geode::prelude;
+
+// --------------------------------------------------
+// KEYBOARD SHORTCUTS
+// --------------------------------------------------
 
 class $modify(CobaltKeyboard, CCKeyboardDispatcher) {
     bool dispatchKeyboardMSG(
@@ -28,7 +31,7 @@ class $modify(CobaltKeyboard, CCKeyboardDispatcher) {
         double timestamp
     ) {
         if (isKeyDown && !isKeyRepeat) {
-            // TAB: Open / Close Cobalt Menu
+            // TAB: Toggle Cobalt Menu
             if (key == enumKeyCodes::KEY_Tab) {
                 CobaltMenu::toggle();
             }
@@ -50,6 +53,10 @@ class $modify(CobaltKeyboard, CCKeyboardDispatcher) {
         );
     }
 };
+
+// --------------------------------------------------
+// MOD INITIALIZATION
+// --------------------------------------------------
 
 $on_mod(Loaded) {
     cobalt::load();
