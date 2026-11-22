@@ -231,7 +231,7 @@ if (!menu) {
         if (!this->getChildByID("neo-hub-menu")) {
 
             auto hubSprite = ButtonSprite::create(
-                "Neo HUB",
+                "Neo------++++HUB",
                 "goldFont.fnt",
                 "GJ_button_01.png",
                 0.65f
