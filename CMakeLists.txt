@@ -68,6 +68,11 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(box2d)
 
+
+CPMAddPackage("gh:Igbalabanov/gd-imgui-cocos#5847848") # specify a commit!
+
+target_link_libraries(${PROJECT_NAME} imgui-cocos)
+
 # --------------------------------------------------
 # Source files
 # --------------------------------------------------
@@ -98,13 +103,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME}
     box2d
 )
-
-
-CPMAddPackage("gh:Igbalabanov/gd-imgui-cocos#5847848") # specify a commit!
-
-target_link_libraries(${PROJECT_NAME} imgui-cocos)
-
-
 # --------------------------------------------------
 # Configure Geode mod
 # --------------------------------------------------
