@@ -427,28 +427,18 @@ this->addChild(menu, 100);
         }
 
         // Open history popup
+        // Save searches
         void onSearch(CCObject* sender) {
-    auto input = typeinfo_cast<CCTextInputNode*>(
-        this->getChildByID("search-bar")
-    );
+            auto input = typeinfo_cast<CCTextInputNode*>(
+                this->getChildByID("search-bar")
+            );
 
-    if (input) {
-        auto query = input->getString();
+            if (input) {
+                pushHistory(input->getString());
+            }
 
-        pushHistory(query);
-
-        log::info(
-            "SearchHistory: Search recorded: {}",
-            query
-        );
-    } else {
-        log::warn(
-            "SearchHistory: Search input not found."
-        );
-    }
-
-    LevelSearchLayer::onSearch(sender);
-}
+            LevelSearchLayer::onSearch(sender);
+        }
     };
 
 }
