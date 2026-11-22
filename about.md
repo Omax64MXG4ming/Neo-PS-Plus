@@ -8,4 +8,4 @@ Type gdIntercept
 and More Better!
 
 [Neo PS](https://neops.x10.mx/)
-included Performance and 
+included Performance and Better Utils for Neo PS users
