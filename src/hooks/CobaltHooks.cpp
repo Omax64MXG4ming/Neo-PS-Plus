@@ -13,8 +13,8 @@ using namespace geode::prelude;
 
 // Level Info
 class $modify(CobaltLevelInfo, LevelInfoLayer) {
-    bool init(GJGameLevel* level) {
-        if (!LevelInfoLayer::init(level))
+    bool init(GJGameLevel* level, bool challenge) {
+        if (!LevelInfoLayer::init(level, challenge))
             return false;
 
         if (level) {
@@ -63,7 +63,7 @@ class $modify(CobaltPauseLayer, PauseLayer) {
 
 // Game Manager
 class $modify(CobaltGameManager, GameManager) {
-    bool isColorUnlocked(int id, bool type) {
+    bool isColorUnlocked(int id, UnlockType type) {
         if (cobalt::g_state.iconBypass)
             return true;
 
@@ -101,10 +101,15 @@ class $modify(CobaltPlayLayer, PlayLayer) {
         }
     }
 
-    void checkCollisions(PlayerObject* player, float dt) {
-        if (!cobalt::g_state.noCollision) {
-            PlayLayer::checkCollisions(player, dt);
-        }
+    int checkCollisions(
+        PlayerObject* player,
+        float dt,
+        bool ignoreDamage
+    ) {
+        if (cobalt::g_state.noCollision)
+            return 0;
+
+        return PlayLayer::checkCollisions(player, dt, ignoreDamage);
     }
 
     void shakeCamera(float a, float b, float c) {
@@ -115,19 +120,12 @@ class $modify(CobaltPlayLayer, PlayLayer) {
 
     void resetLevel() {
         PlayLayer::resetLevel();
-
         cobalt::applySpeedhack();
     }
 };
 
 // Player Object
 class $modify(CobaltPlayerObject, PlayerObject) {
-    void toggleVisibility(bool visible) {
-        if (!cobalt::g_state.noHide) {
-            PlayerObject::toggleVisibility(visible);
-        }
-    }
-
     void playDeathEffect() {
         if (!cobalt::g_state.noDeathEffect) {
             PlayerObject::playDeathEffect();
