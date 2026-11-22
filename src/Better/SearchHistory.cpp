@@ -19,102 +19,78 @@ namespace neo::searchHistory {
     // Storage
     // --------------------------------------------------
 
-// --------------------------------------------------
-// Storage
-// --------------------------------------------------
+    static std::string getHistoryPath() {
+        return (Mod::get()->getSaveDir() / "history.txt").string();
+    }
 
-static std::filesystem::path getHistoryPath() {
-    auto dir = std::filesystem::path(
-        Mod::get()->getSaveDir().string()
-    );
+    static std::vector<std::string> getHistory() {
+        std::vector<std::string> history;
 
-    std::error_code ec;
-    std::filesystem::create_directories(dir, ec);
+        std::ifstream file(getHistoryPath());
+        if (!file.is_open())
+            return history;
 
-    return dir / "history.txt";
-}
+        std::string line;
 
-static std::vector<std::string> getHistory() {
-    std::vector<std::string> history;
+        while (std::getline(file, line)) {
+            if (!line.empty()) {
+                history.push_back(line);
+            }
 
-    auto path = getHistoryPath();
+            if (history.size() >= MAX_HISTORY)
+                break;
+        }
 
-    std::ifstream file(path);
-
-    if (!file.is_open())
         return history;
-
-    std::string line;
-
-    while (std::getline(file, line)) {
-        if (!line.empty())
-            history.push_back(line);
-
-        if (history.size() >= MAX_HISTORY)
-            break;
     }
 
-    return history;
-}
+    static void saveHistory(
+        std::vector<std::string> const& history
+    ) {
+        std::ofstream file(getHistoryPath(), std::ios::trunc);
 
-static void saveHistory(
-    std::vector<std::string> const& history
-) {
-    auto path = getHistoryPath();
+        if (!file.is_open())
+            return;
 
-    std::ofstream file(
-        path,
-        std::ios::out | std::ios::trunc
-    );
-
-    if (!file.is_open()) {
-        log::error(
-            "SearchHistory: Cannot open history file: {}",
-            path.string()
-        );
-        return;
+        for (auto const& entry : history) {
+            file << entry << '\n';
+        }
     }
-
-    for (auto const& entry : history) {
-        file << entry << '\n';
-    }
-
-    file.flush();
-
-    if (!file.good()) {
-        log::error("SearchHistory: Failed to write history.");
-        return;
-    }
-
-    log::info(
-        "SearchHistory: Saved {} searches.",
-        history.size()
-    );
-}
 
     // --------------------------------------------------
     // History management
     // --------------------------------------------------
-    
-static void pushHistory(std::string const& text) {
-    if (text.empty())
-        return;
 
-    // Ignore whitespace-only searches.
-    if (text.find_first_not_of(" \t\r\n") == std::string::npos)
-        return;
+    static void pushHistory(std::string const& text) {
+        if (text.empty())
+            return;
 
-    auto history = getHistory();
+        // Ignore whitespace-only searches.
+        if (text.find_first_not_of(" \t\r\n") == std::string::npos)
+            return;
 
-    // Insert newest search first.
-    history.insert(history.begin(), text);
+        auto history = getHistory();
 
-    // Limit history size.
-    if (history.size() > MAX_HISTORY)
-        history.resize(MAX_HISTORY);
+        // Remove previous occurrence.
+        history.erase(
+            std::remove(history.begin(), history.end(), text),
+            history.end()
+        );
 
-    saveHistory(history);
-}
+        // Insert newest search first.
+        history.insert(history.begin(), text);
+
+        // Limit history size.
+        if (history.size() > MAX_HISTORY)
+            history.resize(MAX_HISTORY);
+
+        saveHistory(history);
+    }
+
+    static void clearHistory() {
+        saveHistory({});
+    }
+
     // --------------------------------------------------
     // Popup
     // --------------------------------------------------
@@ -427,6 +403,22 @@ this->addChild(menu, 100);
         }
 
         // Open history popup
+        void onHistory(CCObject*) {
+            auto scene = CCDirector::get()->getRunningScene();
+
+            if (!scene)
+                return;
+
+            auto popup = SearchHistoryPopup::create(getHistory());
+
+            if (popup) {
+                scene->addChild(
+                    popup,
+                    scene->getHighestChildZ() + 1
+                );
+            }
+        }
+
         // Save searches
         void onSearch(CCObject* sender) {
             auto input = typeinfo_cast<CCTextInputNode*>(
