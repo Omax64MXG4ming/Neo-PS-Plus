@@ -11,8 +11,71 @@
 #ifndef GEODE_IS_IOS
 
 using namespace geode::prelude;
-// Neo Buttons
 
+
+#include <Geode/Geode.hpp>
+#include <hjfod.custom-keybinds/include/Keybinds.hpp>
+
+#include "menu/CobaltMenu.hpp"
+#include "features/CobaltState.hpp"
+
+using namespace geode::prelude;
+using namespace keybinds;
+
+$execute {
+    BindManager::get()->registerBindable({
+        "openmenu"_spr,
+        "Open/Close Cobalt",
+        "Open or close the Cobalt Mod Menu",
+        { Keybind::create(KEY_Tab, Modifier::None) },
+        "Cobalt"
+    });
+
+    BindManager::get()->registerBindable({
+        "isSpeedHackOn"_spr,
+        "Toggle Speedhack",
+        "Enable or disable game speed",
+        {},
+        "Cobalt/Speedhack"
+    });
+
+    new EventListener(
+        [](InvokeBindEvent* event) {
+            if (event->isDown()) {
+                CobaltMenu::toggle();
+            }
+
+            return ListenerResult::Propagate;
+        },
+        InvokeBindFilter(nullptr, "openmenu"_spr)
+    );
+
+    new EventListener(
+        [](InvokeBindEvent* event) {
+            if (event->isDown()) {
+                cobalt::g_state.speedhack =
+                    !cobalt::g_state.speedhack;
+
+                cobalt::applySpeedhack();
+            }
+
+            return ListenerResult::Propagate;
+        },
+        InvokeBindFilter(nullptr, "isSpeedHackOn"_spr)
+    );
+}
+
+$on_mod(Loaded) {
+    cobalt::load();
+
+    cobalt::applyPatches();
+
+    log::info("Cobalt Mod Menu initialized!");
+}
+
+
+
+// Neo Buttons
 class $modify(NeoCustomMenuButton, MenuLayer) {
 
     bool init() {
