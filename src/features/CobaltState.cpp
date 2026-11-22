@@ -58,7 +58,13 @@ void load() {
     g_state.noTransitions =
         mod->getSavedValue<bool>("isTransitionOff", false);
 
+    g_state.speed = mod->getSavedValue<float>(
+    "cobalt.speed",
+    1.0f
+);
+    
     g_state.lockAllIcons = false;
+
 }
 
 void save() {
@@ -85,6 +91,7 @@ void save() {
     mod->setSavedValue("isNotDeathEffect", g_state.noDeathEffect);
     mod->setSavedValue("isNotShake", g_state.noShake);
     mod->setSavedValue("isTransitionOff", g_state.noTransitions);
+    mod->setSavedValue("cobalt.speed", g_state.speed);
 }
 
 void applySpeedhack() {
