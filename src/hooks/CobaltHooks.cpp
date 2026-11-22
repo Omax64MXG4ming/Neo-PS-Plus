@@ -2,7 +2,7 @@
 
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include <Geode/modify/EditLevelLayer.hpp>
-// #include <Geode/modify/PauseLayer.hpp>
+#include <Geode/modify/PauseLayer.hpp>
 #include <Geode/modify/GameManager.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/PlayerObject.hpp>
