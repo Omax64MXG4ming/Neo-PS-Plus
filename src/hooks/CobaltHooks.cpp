@@ -85,15 +85,15 @@ class $modify(CobaltGameManager, GameManager) {
 };
 
 // Play Layer
-//class $modify(CobaltPlayLayer, PlayLayer) {
-  //  void update(float dt) {
-   //     PlayLayer::update(dt);
+class $modify(CobaltPlayLayer, PlayLayer) {
+   void update(float dt) {
+     PlayLayer::update(dt);
 
-   //     if (cobalt::g_state.autoComplete) {
-    //        cobalt::g_state.autoComplete = false;
-      //      PlayLayer::showEndLayer();
-    //    }
- //   }
+       if (cobalt::g_state.autoComplete) {
+          cobalt::g_state.autoComplete = false;
+            PlayLayer::showEndLayer();
+        }
+   }
 
     void destroyPlayer(PlayerObject* player, GameObject* object) {
         if (!cobalt::g_state.noclip) {
