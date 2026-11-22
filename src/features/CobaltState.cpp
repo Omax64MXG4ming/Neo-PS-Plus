@@ -106,14 +106,14 @@ void applySpeedhack() {
 
     director->getScheduler()->setTimeScale(speed);
 
-    if (g_state.speedhackSong) {
-        auto audio = FMODAudioEngine::sharedEngine();
+    auto audio = FMODAudioEngine::sharedEngine();
 
-        if (audio && audio->m_globalChannel) {
-            audio->m_globalChannel->setPitch(speed);
-        }
+    if (audio && audio->m_globalChannel) {
+        audio->m_globalChannel->setPitch(
+            g_state.speedhackSong ? speed : 1.0f
+        );
     }
- }
+}
 
 void applyPatches() {
     // Los patches específicos de plataforma y versión
