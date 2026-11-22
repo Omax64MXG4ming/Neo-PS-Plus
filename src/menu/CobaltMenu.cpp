@@ -30,7 +30,8 @@ enum ToggleID {
     NoShake,
     NoTransitions,
 
-    SpeedSong
+    SpeedSong,
+    SpeedHack = 18
 };
 
 }
@@ -274,7 +275,7 @@ void CobaltMenu::buildOptions() {
 
     // Count all rows to calculate scroll content height.
     constexpr int sectionCount = 5;
-    constexpr int optionCount = 17;
+    constexpr int optionCount = 18;
 
     float contentHeight =
         25.f +
@@ -293,11 +294,18 @@ void CobaltMenu::buildOptions() {
     addSection("SPEEDHACK", y);
 
     addToggle(
-        "Speedhack Song",
-        SpeedSong,
-        cobalt::g_state.speedhackSong,
-        y
-    );
+    "Enable Speedhack",
+    SpeedHack,
+    cobalt::g_state.speedhack,
+    y
+);
+
+addToggle(
+    "Speedhack Song",
+    SpeedSong,
+    cobalt::g_state.speedhackSong,
+    y
+);
 
     // Speed controls
     auto speedTitle = CCLabelBMFont::create(
@@ -465,6 +473,11 @@ void CobaltMenu::onToggle(CCObject* sender) {
             cobalt::applyPatches();
             break;
 
+        case SpeedHack:
+            cobalt::g_state.speedhack = value;
+            cobalt::applySpeedhack();
+            break;
+        
         case SpeedSong:
             cobalt::g_state.speedhackSong = value;
             cobalt::applySpeedhack();
