@@ -1,8 +1,9 @@
 # 1.1.2
-Added Orbit Pool ScreenSaver Configurable 
-Ultimate LDM Options 
-Layers + Better Fixes 
-Adjusted Updater Changes 
+* Added Orbit Pool ScreenSaver Configurable 
+* Ultimate LDM Options 
+* Layers + Better Fixes 
+* Adjusted Updater Changes 
+* Custom Menu Mod in Game
 
 # 1.1.1
 Updated the Updater
