@@ -20,23 +20,20 @@ using namespace geode::prelude;
 
 using namespace geode::prelude;
 
-#ifdef GEODE_IS_WINDOWS
-// No necesitamos incluir Windows.h.
-#endif
-
 class $modify(CobaltKeyboard, CCKeyboardDispatcher) {
     bool dispatchKeyboardMSG(
         enumKeyCodes key,
         bool isKeyDown,
-        bool isKeyRepeat
+        bool isKeyRepeat,
+        double timestamp
     ) {
         if (isKeyDown && !isKeyRepeat) {
-            // TAB: abrir/cerrar menú
+            // TAB: Open / Close Cobalt Menu
             if (key == enumKeyCodes::KEY_Tab) {
-                cobalt::CobaltMenu::toggle();
+                CobaltMenu::toggle();
             }
 
-            // F: activar/desactivar Speedhack
+            // F: Toggle Speedhack
             if (key == enumKeyCodes::KEY_F) {
                 cobalt::g_state.speedhack =
                     !cobalt::g_state.speedhack;
@@ -48,7 +45,8 @@ class $modify(CobaltKeyboard, CCKeyboardDispatcher) {
         return CCKeyboardDispatcher::dispatchKeyboardMSG(
             key,
             isKeyDown,
-            isKeyRepeat
+            isKeyRepeat,
+            timestamp
         );
     }
 };
@@ -57,6 +55,7 @@ $on_mod(Loaded) {
     cobalt::load();
     cobalt::applyPatches();
 }
+
 
 // Neo Buttons
 class $modify(NeoCustomMenuButton, MenuLayer) {
