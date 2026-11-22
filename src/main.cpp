@@ -6,10 +6,65 @@
 #include "ui/RestartButtons.hpp"
 #include "BetterIncludes.hpp"
 #include "updater/NeoUpdater.hpp"
+#include "ui/NeoCustomMenu.hpp"
 #ifndef GEODE_IS_IOS
 
 using namespace geode::prelude;
+// Neo Buttons
 
+class $modify(NeoCustomMenuButton, MenuLayer) {
+
+    bool init() {
+        if (!MenuLayer::init())
+            return false;
+
+        auto winSize = CCDirector::get()->getWinSize();
+
+        // Button menu
+        auto menu = CCMenu::create();
+
+        if (!menu)
+            return true;
+
+        menu->setID("neo-custom-menu-button-menu");
+        menu->setPosition(CCPointZero);
+
+        this->addChild(menu, 1000);
+
+        // Button sprite
+        auto sprite = ButtonSprite::create(
+            "NEO",
+            "goldFont.fnt",
+            "GJ_button_01.png",
+            0.7f
+        );
+
+        if (!sprite)
+            return true;
+
+        auto button = CCMenuItemSpriteExtra::create(
+            sprite,
+            this,
+            menu_selector(NeoCustomMenuButton::onOpenNeoMenu)
+        );
+
+        if (!button)
+            return true;
+
+        button->setPosition({
+            winSize.width - 42.f,
+            winSize.height - 45.f
+        });
+
+        menu->addChild(button);
+
+        return true;
+    }
+
+    void onOpenNeoMenu(CCObject*) {
+        neo::ui::openCustomMenu();
+    }
+};
 // --------------------------------------------------
 // MENU LAYER
 // --------------------------------------------------
