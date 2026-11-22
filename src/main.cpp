@@ -7,6 +7,7 @@
 #include "BetterIncludes.hpp"
 #include "updater/NeoUpdater.hpp"
 #include "ui/NeoCustomMenu.hpp"
+#include "ui/NeoHub/NeoHubLayer.hpp"
 #ifndef GEODE_IS_IOS
 
 using namespace geode::prelude;
@@ -65,6 +66,59 @@ class $modify(NeoCustomMenuButton, MenuLayer) {
         neo::ui::openCustomMenu();
     }
 };
+// Neo HUB
+
+bool init() {
+    if (!MenuLayer::init())
+        return false;
+
+    auto winSize = CCDirector::get()->getWinSize();
+
+    // ------------------------------------------
+    // NEO HUB BUTTON
+    // ------------------------------------------
+
+    auto sprite = ButtonSprite::create(
+        "Neo HUB",
+        "goldFont.fnt",
+        "GJ_button_01.png",
+        0.65f
+    );
+
+    if (sprite) {
+        auto button = CCMenuItemSpriteExtra::create(
+            sprite,
+            this,
+            menu_selector(NeoHubMenuLayer::onOpenNeoHub)
+        );
+
+        if (button) {
+            auto menu = CCMenu::create();
+
+            if (menu) {
+                menu->setPosition(CCPointZero);
+
+                button->setPosition(
+                    ccp(
+                        winSize.width - 55.f,
+                        winSize.height - 40.f
+                    )
+                );
+
+                menu->addChild(button);
+                this->addChild(menu, 1000);
+            }
+        }
+    }
+
+    return true;
+}
+
+void onOpenNeoHub(CCObject*) {
+    neo::ui::openNeoHub(this);
+}
+
+
 // --------------------------------------------------
 // MENU LAYER
 // --------------------------------------------------
