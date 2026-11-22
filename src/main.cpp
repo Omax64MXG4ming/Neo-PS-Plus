@@ -33,9 +33,9 @@ class $modify(NeoCustomMenuButton, MenuLayer) {
 
         // Button sprite
         auto sprite = ButtonSprite::create(
-            "NEO",
+            "Credits",
             "goldFont.fnt",
-            "GJ_button_01.png",
+            "GJ_button_03.png",
             0.7f
         );
 
