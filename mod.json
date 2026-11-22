@@ -251,6 +251,10 @@
 		"geode.node-ids": {
 		 "version": ">=v1.23.3",
 		"required": false
-    }
+    },
+		"hjfod.custom-keybinds": {
+           "version": ">=1.0.0",
+			"required": false
+		}
   }
 }
