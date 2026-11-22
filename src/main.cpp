@@ -12,68 +12,51 @@
 
 using namespace geode::prelude;
 
-
 #include <Geode/Geode.hpp>
-#include <geode.custom-keybinds/src/AltTabFix.cpp>
+#include <Geode/modify/CCKeyboardDispatcher.hpp>
 
 #include "menu/CobaltMenu.hpp"
 #include "features/CobaltState.hpp"
 
 using namespace geode::prelude;
-using namespace keybinds;
 
-$execute {
-    BindManager::get()->registerBindable({
-        "openmenu"_spr,
-        "Open/Close Cobalt",
-        "Open or close the Cobalt Mod Menu",
-        { Keybind::create(KEY_Tab, Modifier::None) },
-        "Cobalt"
-    });
+#ifdef GEODE_IS_WINDOWS
+// No necesitamos incluir Windows.h.
+#endif
 
-    BindManager::get()->registerBindable({
-        "isSpeedHackOn"_spr,
-        "Toggle Speedhack",
-        "Enable or disable game speed",
-        {},
-        "Cobalt/Speedhack"
-    });
-
-    new EventListener(
-        [](InvokeBindEvent* event) {
-            if (event->isDown()) {
-                CobaltMenu::toggle();
+class $modify(CobaltKeyboard, CCKeyboardDispatcher) {
+    bool dispatchKeyboardMSG(
+        enumKeyCodes key,
+        bool isKeyDown,
+        bool isKeyRepeat
+    ) {
+        if (isKeyDown && !isKeyRepeat) {
+            // TAB: abrir/cerrar menú
+            if (key == enumKeyCodes::KEY_Tab) {
+                cobalt::CobaltMenu::toggle();
             }
 
-            return ListenerResult::Propagate;
-        },
-        InvokeBindFilter(nullptr, "openmenu"_spr)
-    );
-
-    new EventListener(
-        [](InvokeBindEvent* event) {
-            if (event->isDown()) {
+            // F: activar/desactivar Speedhack
+            if (key == enumKeyCodes::KEY_F) {
                 cobalt::g_state.speedhack =
                     !cobalt::g_state.speedhack;
 
                 cobalt::applySpeedhack();
             }
+        }
 
-            return ListenerResult::Propagate;
-        },
-        InvokeBindFilter(nullptr, "isSpeedHackOn"_spr)
-    );
-}
+        return CCKeyboardDispatcher::dispatchKeyboardMSG(
+            key,
+            isKeyDown,
+            isKeyRepeat
+        );
+    }
+};
 
 $on_mod(Loaded) {
     cobalt::load();
-
     cobalt::applyPatches();
-
-    log::info("Cobalt Mod Menu initialized!");
 }
-
-
 
 // Neo Buttons
 class $modify(NeoCustomMenuButton, MenuLayer) {
