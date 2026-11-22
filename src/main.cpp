@@ -14,7 +14,7 @@ using namespace geode::prelude;
 
 
 #include <Geode/Geode.hpp>
-#include <hjfod.custom-keybinds/include/Keybinds.hpp>
+#include <geode.custom-keybinds/src/AltTabFix.cpp>
 
 #include "menu/CobaltMenu.hpp"
 #include "features/CobaltState.hpp"
