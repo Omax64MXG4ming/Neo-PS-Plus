@@ -68,11 +68,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(box2d)
 
-
-CPMAddPackage("gh:Igbalabanov/gd-imgui-cocos#5847848") # specify a commit!
-
-target_link_libraries(${PROJECT_NAME} imgui-cocos)
-
 # --------------------------------------------------
 # Source files
 # --------------------------------------------------
