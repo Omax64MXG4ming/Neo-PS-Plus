@@ -1,5 +1,4 @@
 #include "NeoCustomMenu.hpp"
-
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
@@ -11,15 +10,21 @@ protected:
     CCLabelBMFont* m_statusLabel = nullptr;
     int m_testCount = 0;
 
-    bool init() {
+    bool init() override {
         if (!CCLayerColor::initWithColor({0, 0, 0, 170}))
             return false;
 
         auto winSize = CCDirector::get()->getWinSize();
-        auto center = winSize / 2.f;
+
+        // Screen center
+        auto center = ccp(
+            winSize.width / 2.f,
+            winSize.height / 2.f
+        );
 
         this->setContentSize(winSize);
         this->setPosition(CCPointZero);
+        this->setKeypadEnabled(true);
 
         // ------------------------------------------
         // MAIN PANEL
@@ -45,11 +50,7 @@ protected:
         );
 
         if (title) {
-            title->setPosition({
-                center.x,
-                center.y + 90.f
-            });
-
+            title->setPosition(ccp(0.f, 85.f));
             title->setScale(0.8f);
             panel->addChild(title);
         }
@@ -64,11 +65,7 @@ protected:
         );
 
         if (description) {
-            description->setPosition({
-                170.f,
-                160.f
-            });
-
+            description->setPosition(ccp(0.f, 40.f));
             description->setScale(0.45f);
             description->setColor({180, 210, 255});
 
@@ -85,10 +82,9 @@ protected:
         );
 
         if (m_statusLabel) {
-            m_statusLabel->setPosition({
-                center.x,
-                center.y + 15.f
-            });
+            m_statusLabel->setPosition(
+                ccp(center.x, center.y + 15.f)
+            );
 
             m_statusLabel->setScale(0.5f);
             m_statusLabel->setColor({180, 255, 180});
@@ -127,10 +123,9 @@ protected:
             );
 
             if (testButton) {
-                testButton->setPosition({
-                    center.x,
-                    center.y - 35.f
-                });
+                testButton->setPosition(
+                    ccp(center.x, center.y - 35.f)
+                );
 
                 menu->addChild(testButton);
             }
@@ -152,23 +147,13 @@ protected:
             );
 
             if (closeButton) {
-                closeButton->setPosition({
-                    center.x + 150.f,
-                    center.y + 100.f
-                });
+                closeButton->setPosition(
+                    ccp(center.x + 150.f, center.y + 100.f)
+                );
 
                 menu->addChild(closeButton);
             }
         }
-
-        // ------------------------------------------
-        // INPUT
-        // ------------------------------------------
-
-        this->setTouchEnabled(true);
-        this->setTouchMode(kCCTouchesOneByOne);
-        this->setTouchPriority(-500);
-        this->setKeypadEnabled(true);
 
         return true;
     }
@@ -219,11 +204,6 @@ public:
         CC_SAFE_DELETE(ret);
         return nullptr;
     }
-
-    bool ccTouchBegan(CCTouch*, CCEvent*) override {
-        // Consume touches outside the panel too.
-        return true;
-    }
 };
 
 // ----------------------------------------------
@@ -253,5 +233,6 @@ void openCustomMenu() {
     );
 
     log::info("[NeoCustomMenu] Menu opened.");
- }
+}
+
 }
