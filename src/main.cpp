@@ -66,58 +66,6 @@ class $modify(NeoCustomMenuButton, MenuLayer) {
         neo::ui::openCustomMenu();
     }
 };
-// Neo HUB
-
-bool init() {
-    if (!MenuLayer::init())
-        return false;
-
-    auto winSize = CCDirector::get()->getWinSize();
-
-    // ------------------------------------------
-    // NEO HUB BUTTON
-    // ------------------------------------------
-
-    auto sprite = ButtonSprite::create(
-        "Neo HUB",
-        "goldFont.fnt",
-        "GJ_button_01.png",
-        0.65f
-    );
-
-    if (sprite) {
-        auto button = CCMenuItemSpriteExtra::create(
-            sprite,
-            this,
-            menu_selector(NeoHubMenuLayer::onOpenNeoHub)
-        );
-
-        if (button) {
-            auto menu = CCMenu::create();
-
-            if (menu) {
-                menu->setPosition(CCPointZero);
-
-                button->setPosition(
-                    ccp(
-                        winSize.width - 55.f,
-                        winSize.height - 40.f
-                    )
-                );
-
-                menu->addChild(button);
-                this->addChild(menu, 1000);
-            }
-        }
-    }
-
-    return true;
-}
-
-void onOpenNeoHub(CCObject*) {
-    neo::ui::openNeoHub(this);
-}
-
 
 // --------------------------------------------------
 // MENU LAYER
@@ -276,6 +224,50 @@ if (!menu) {
             }
         }
 
+        // ------------------------------------------
+        // NEO HUB BUTTON
+        // ------------------------------------------
+
+        if (!this->getChildByID("neo-hub-menu")) {
+
+            auto hubSprite = ButtonSprite::create(
+                "Neo HUB",
+                "goldFont.fnt",
+                "GJ_button_01.png",
+                0.65f
+            );
+
+            if (hubSprite) {
+
+                auto hubButton = CCMenuItemSpriteExtra::create(
+                    hubSprite,
+                    this,
+                    menu_selector(AltMenuLayer::onOpenNeoHub)
+                );
+
+                if (hubButton) {
+
+                    auto hubMenu = CCMenu::create();
+
+                    if (hubMenu) {
+                        hubMenu->setID("neo-hub-menu");
+                        hubMenu->setPosition(CCPointZero);
+
+                        hubButton->setPosition(
+                            ccp(
+                                winSize.width - 65.f,
+                                winSize.height - 80.f
+                            )
+                        );
+
+                        hubMenu->addChild(hubButton);
+
+                        this->addChild(hubMenu, 100);
+                    }
+                }
+            }
+        }
+        
         return true;
     }
 
@@ -289,6 +281,12 @@ if (!menu) {
 
     void onReload(CCObject*) {
         neo::ui::RestartButtons::reload();
+    }
+
+    void onOpenNeoHub(CCObject*) {
+        log::info("[NeoHub] Opening Neo Hub");
+
+        neo::ui::openNeoHub(this);
     }
 
     void onNeoInspector(CCObject*) {
