@@ -560,7 +560,6 @@ void CobaltMenu::buildOptions() {
 
         m_panel->addChild(footer, 5);
     }
-}
 
 log::debug(
     "Cobalt UI | Panel: {}x{} | Scroll: {}x{} | Content: {}x{}",
@@ -570,8 +569,9 @@ log::debug(
     m_scroll->getContentSize().height,
     m_scroll->m_contentLayer->getContentSize().width,
     m_scroll->m_contentLayer->getContentSize().height
-);
+ );
 
+}
 // --------------------------------------------------
 // TOGGLE CALLBACK
 // --------------------------------------------------
