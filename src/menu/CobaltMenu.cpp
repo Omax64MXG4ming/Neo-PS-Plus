@@ -122,24 +122,29 @@ void CobaltMenu::buildMenu() {
     panel->addChild(subtitle);
 
     // Close button
-    auto closeMenu = CCMenu::create();
+auto closeMenu = CCMenu::create();
+closeMenu->setPosition(0.f, 0.f);
 
-    auto closeSprite = CCSprite::createWithSpriteFrameName(
-        "GJ_closeBtn_001.png"
-    );
+auto closeSprite = CCSprite::createWithSpriteFrameName(
+    "GJ_closeBtn_001.png"
+);
 
+if (closeSprite) {
     auto closeButton = CCMenuItemSpriteExtra::create(
         closeSprite,
         this,
         menu_selector(CobaltMenu::onClose)
     );
 
-    closeButton->setPosition(width / 2 - 15.f, height / 2 - 20.f);
+    closeButton->setPosition(
+        width - 19.f,
+        height - 19.f
+    );
 
     closeMenu->addChild(closeButton);
-    closeMenu->setPosition(width / 2, height / 2);
+}
 
-    panel->addChild(closeMenu, 5);
+panel->addChild(closeMenu, 10);
 
     // Separator
     auto separator = CCLayerColor::create(
@@ -214,17 +219,31 @@ void CobaltMenu::addToggle(
 ) {
     auto content = m_scroll->m_contentLayer;
 
+    float width = content->getContentSize().width;
+
+    // Row background
+    auto row = CCLayerColor::create(
+        {35, 43, 58, 210},
+        width - 18.f,
+        27.f
+    );
+
+    row->setPosition(9.f, y - 13.5f);
+    content->addChild(row);
+
+    // Option label
     auto label = CCLabelBMFont::create(
         title,
         "bigFont.fnt"
     );
 
-    label->setScale(0.43f);
+    label->setScale(0.42f);
     label->setAnchorPoint({0.f, 0.5f});
     label->setPosition(12.f, y);
 
     content->addChild(label);
 
+    // Toggle sprites
     auto offSprite = CCSprite::createWithSpriteFrameName(
         "GJ_checkOff_001.png"
     );
@@ -234,13 +253,15 @@ void CobaltMenu::addToggle(
     );
 
     if (!offSprite || !onSprite) {
+        log::warn("Cobalt: Could not load toggle sprites");
         y -= 32.f;
         return;
     }
 
-    offSprite->setScale(0.75f);
-    onSprite->setScale(0.75f);
+    offSprite->setScale(0.65f);
+    onSprite->setScale(0.65f);
 
+    // Toggle
     auto toggle = CCMenuItemToggler::create(
         offSprite,
         onSprite,
@@ -248,19 +269,20 @@ void CobaltMenu::addToggle(
         menu_selector(CobaltMenu::onToggle)
     );
 
+    if (!toggle) {
+        y -= 32.f;
+        return;
+    }
+
     toggle->setTag(id);
 
     if (value)
         toggle->toggle(true);
 
     auto menu = CCMenu::create();
+    menu->setPosition(width - 29.f, y);
 
     menu->addChild(toggle);
-    menu->setPosition(
-        content->getContentSize().width - 28.f,
-        y
-    );
-
     content->addChild(menu);
 
     y -= 32.f;
@@ -320,9 +342,12 @@ addToggle(
     content->addChild(speedTitle);
 
     m_speedLabel = CCLabelBMFont::create(
-        "1.00x",
-        "bigFont.fnt"
-    );
+    fmt::format(
+        "{:.2f}x",
+        cobalt::g_state.speed
+    ).c_str(),
+    "bigFont.fnt"
+);
 
     m_speedLabel->setScale(0.43f);
     m_speedLabel->setPosition(width - 85.f, y);
