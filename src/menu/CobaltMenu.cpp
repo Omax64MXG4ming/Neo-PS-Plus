@@ -248,21 +248,6 @@ void CobaltMenu::buildMenu() {
 // TOUCH
 // --------------------------------------------------
 
-void CobaltMenu::registerWithTouchDispatcher() {
-    CCTouchDispatcher::get()->addTargetedDelegate(
-        this,
-        0,
-        true
-    );
-}
-
-bool CobaltMenu::ccTouchBegan(
-    CCTouch* touch,
-    CCEvent* event
-) {
-    return true;
-}
-
 // --------------------------------------------------
 // SECTION
 // --------------------------------------------------
@@ -570,13 +555,22 @@ void CobaltMenu::buildOptions() {
         footer->setOpacity(130);
 
         footer->setPosition(
-            width / 2.f,
-            10.f
-        );
+        m_panel->getContentSize().width / 2.f, 10.f
+            );
 
         m_panel->addChild(footer, 5);
     }
 }
+
+log::debug(
+    "Cobalt UI | Panel: {}x{} | Scroll: {}x{} | Content: {}x{}",
+    m_panel->getContentSize().width,
+    m_panel->getContentSize().height,
+    m_scroll->getContentSize().width,
+    m_scroll->getContentSize().height,
+    m_scroll->m_contentLayer->getContentSize().width,
+    m_scroll->m_contentLayer->getContentSize().height
+);
 
 // --------------------------------------------------
 // TOGGLE CALLBACK
