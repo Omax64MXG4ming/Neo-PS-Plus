@@ -34,14 +34,6 @@ jobs:
             os: macos-latest
             target: MacOS
 
-          - name: macM1
-           os: macm1-latest
-           target: macm1
-
-          - name: macIntel
-           os: macintel-latest
-           target: macintel
-
           - name: iOS
             os: macos-latest
             target: iOS
