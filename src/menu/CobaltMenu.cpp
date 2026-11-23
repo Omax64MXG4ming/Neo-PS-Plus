@@ -252,7 +252,7 @@ void CobaltMenu::buildMenu() {
 void CobaltMenu::registerWithTouchDispatcher() {
     CCTouchDispatcher::get()->addTargetedDelegate(
         this,
-        -128,
+        0,
         true
     );
 }
@@ -400,7 +400,11 @@ if (label) {
 void CobaltMenu::buildOptions() {
     auto content = m_scroll->m_contentLayer;
 
-    float width = m_scroll->getContentSize().width;
+    auto win = CCDirector::sharedDirector()->getWinSize();
+    float s = getUIScale(win);
+
+    float width =
+        m_panel->getContentSize().width - 30.f * s;
 
     constexpr int sectionCount = 5;
     constexpr int optionCount = 18;
