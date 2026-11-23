@@ -10,12 +10,6 @@ protected:
     CCNode* m_panel = nullptr;
     ScrollLayer* m_scroll = nullptr;
     CCLabelBMFont* m_speedLabel = nullptr;
-    bool ccTouchBegan(
-    cocos2d::CCTouch* touch,
-    cocos2d::CCEvent* event
-) override;
-
-void registerWithTouchDispatcher() override;
 
     bool init() override;
 
