@@ -4,6 +4,7 @@
 #include <Geode/binding/ButtonSprite.hpp>
 #include <Geode/binding/CCMenuItemToggler.hpp>
 #include <Geode/binding/CCMenuItemSpriteExtra.hpp>
+#include <Geode/modify/CCTouchDispatcher.hpp>
 
 using namespace geode::prelude;
 
@@ -62,17 +63,18 @@ void CobaltMenu::buildMenu() {
 
     // Background overlay
     auto overlay = CCLayerColor::create(
-        {0, 0, 0, 145},
-        win.width,
-        win.height
-    );
+    {0, 0, 0, 175},
+    win.width,
+    win.height
+);
 
-    addChild(overlay);
+overlay->setPosition(0.f, 0.f);
+addChild(overlay, -1);
 
     // Responsive panel
-    float width = std::min(win.width * 0.82f, 430.f);
-    float height = std::min(win.height * 0.84f, 570.f);
-
+    float width = std::min(win.width * 0.90f, 460.f);
+    float height = std::min(win.height * 0.90f, 650.f);
+    
     auto panel = CCScale9Sprite::create("GJ_square01.png");
 
     if (!panel)
@@ -157,20 +159,16 @@ panel->addChild(closeMenu, 10);
     panel->addChild(separator);
 
     // Scroll area
-    float scrollWidth = width - 26.f;
-    float scrollHeight = height - 100.f;
+    float scrollWidth = width - 30.f;
+    float scrollHeight = height - 115.f;
 
-    m_scroll = ScrollLayer::create({
-        scrollWidth,
-        scrollHeight
-    });
+m_scroll = ScrollLayer::create({
+    scrollWidth,
+    scrollHeight
+});
 
-    m_scroll->setPosition(
-        13.f,
-        20.f
-    );
-
-    panel->addChild(m_scroll);
+    m_scroll->setPosition(15.f, 25.f);
+    panel->addChild(m_scroll, 2);
 
     buildOptions();
 
@@ -187,6 +185,21 @@ panel->addChild(closeMenu, 10);
     panel->runAction(
         CCFadeTo::create(0.18f, 245)
     );
+}
+
+void CobaltMenu::registerWithTouchDispatcher() {
+    CCTouchDispatcher::get()->addTargetedDelegate(
+        this,
+        -128,
+        true
+    );
+}
+
+bool CobaltMenu::ccTouchBegan(
+    CCTouch* touch,
+    CCEvent* event
+) {
+    return true;
 }
 
 void CobaltMenu::addSection(
