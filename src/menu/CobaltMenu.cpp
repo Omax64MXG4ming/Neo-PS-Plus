@@ -72,135 +72,101 @@ bool CobaltMenu::init() {
 }
 
 void CobaltMenu::buildMenu() {
-auto win = CCDirector::sharedDirector()->getWinSize();
+    auto win = CCDirector::sharedDirector()->getWinSize();
+    float s = getUIScale(win);
 
-float s = getUIScale(win);
+    float width = std::min(win.width - 24.f * s, 1000.f);
+    float height = std::min(win.height - 24.f * s, 680.f);
 
-// Responsive panel
-float width = std::min(
-    win.width - 24.f * s,
-    1000.f
-);
+    width = std::max(200.f, width);
+    height = std::max(200.f, height);
 
-float height = std::min(
-    win.height - 24.f * s,
-    680.f
-);
+    // Fullscreen overlay
+    auto overlay = CCLayerColor::create({0, 0, 0, 145});
+    if (!overlay)
+        return;
 
-width = std::max(0.f, width);
-height = std::max(0.f, height);
+    overlay->setContentSize(win);
+    overlay->setPosition(0.f, 0.f);
+    addChild(overlay, -1);
 
-overlay->setPosition(0.f, 0.f);
-addChild(overlay, -1);
-
-    // Responsive panel
-    float width = std::min(win.width * 0.90f, 460.f);
-    float height = std::min(win.height * 0.90f, 650.f);
-    
+    // Main panel
     auto panel = CCScale9Sprite::create("GJ_square01.png");
-
     if (!panel)
         return;
 
     panel->setContentSize({width, height});
     panel->setColor({25, 32, 45});
     panel->setOpacity(245);
-
-    panel->setPosition(
-    win.width / 2.f,
-    win.height / 2.f
-);
+    panel->setPosition(win.width / 2.f, win.height / 2.f);
 
     addChild(panel, 1);
-
     m_panel = panel;
 
     // Header
-    auto title = CCLabelBMFont::create(
-        "COBALT",
-        "bigFont.fnt"
-    );
-
-    title->setScale(0.75f);
-    title->setPosition(
-        width / 2,
-        height - 25.f
-    );
-
+    auto title = CCLabelBMFont::create("COBALT", "bigFont.fnt");
+    title->setScale(0.75f * s);
+    title->setPosition(width / 2.f, height - 25.f * s);
     panel->addChild(title);
 
-    // Subtitle
-    auto subtitle = CCLabelBMFont::create(
-        "MOD MENU",
-        "goldFont.fnt"
-    );
-
-    subtitle->setScale(0.38f);
+    auto subtitle = CCLabelBMFont::create("MOD MENU", "goldFont.fnt");
+    subtitle->setScale(0.38f * s);
     subtitle->setColor({120, 220, 205});
-
-    subtitle->setPosition(
-        width / 2,
-        height - 49.f
-    );
-
+    subtitle->setPosition(width / 2.f, height - 49.f * s);
     panel->addChild(subtitle);
 
     // Close button
-auto closeMenu = CCMenu::create();
-closeMenu->setPosition(0.f, 0.f);
+    auto closeMenu = CCMenu::create();
+    closeMenu->setPosition(0.f, 0.f);
+    closeMenu->setHandlerPriority(-130);
 
-auto closeSprite = CCSprite::createWithSpriteFrameName(
-    "GJ_closeBtn_001.png"
-);
-
-if (closeSprite) {
-    auto closeButton = CCMenuItemSpriteExtra::create(
-        closeSprite,
-        this,
-        menu_selector(CobaltMenu::onClose)
+    auto closeSprite = CCSprite::createWithSpriteFrameName(
+        "GJ_closeBtn_001.png"
     );
 
-    closeButton->setPosition(
-        width - 19.f,
-        height - 19.f
-    );
+    if (closeSprite) {
+        auto closeButton = CCMenuItemSpriteExtra::create(
+            closeSprite,
+            this,
+            menu_selector(CobaltMenu::onClose)
+        );
 
-    closeMenu->addChild(closeButton);
-}
+        closeButton->setPosition(
+            width - 19.f * s,
+            height - 19.f * s
+        );
 
-panel->addChild(closeMenu, 10);
+        closeMenu->addChild(closeButton);
+    }
+
+    panel->addChild(closeMenu, 10);
 
     // Separator
     auto separator = CCLayerColor::create(
         {80, 105, 125, 180},
-        width - 30.f,
-        1.f
+        width - 30.f * s,
+        1.f * s
     );
 
-    separator->setPosition(15.f, height - 65.f);
+    separator->setPosition(15.f * s, height - 65.f * s);
     panel->addChild(separator);
 
     // Scroll area
-// Scroll area
-float scrollWidth = width - 30.f * s;
-float scrollHeight = height - 115.f * s;
+    float scrollWidth = width - 30.f * s;
+    float scrollHeight = height - 115.f * s;
 
-m_scroll = ScrollLayer::create({
-    scrollWidth,
-    scrollHeight
-});
+    m_scroll = ScrollLayer::create({
+        scrollWidth,
+        scrollHeight
+    });
 
-if (!m_scroll)
-    return;
+    if (!m_scroll)
+        return;
 
-m_scroll->setPosition(
-    15.f * s,
-    22.f * s
-);
+    m_scroll->setPosition(15.f * s, 22.f * s);
+    panel->addChild(m_scroll, 2);
 
-panel->addChild(m_scroll, 2);
-
-buildOptions();
+    buildOptions();
 
     // Opening animation
     panel->setScale(0.85f);
@@ -212,10 +178,9 @@ buildOptions();
         )
     );
 
-    panel->runAction(
-        CCFadeTo::create(0.18f, 245)
-    );
+    panel->runAction(CCFadeTo::create(0.18f, 245));
 }
+
 
 void CobaltMenu::registerWithTouchDispatcher() {
     CCTouchDispatcher::get()->addTargetedDelegate(
@@ -323,10 +288,11 @@ void CobaltMenu::addToggle(
         toggle->toggle(true);
 
     auto menu = CCMenu::create();
-    menu->setPosition(width - 29.f, y);
+menu->setPosition(width - 29.f, y);
+menu->setHandlerPriority(-130);
 
-    menu->addChild(toggle);
-    content->addChild(menu);
+menu->addChild(toggle);
+content->addChild(menu);
 
     y -= 32.f;
 }
@@ -352,13 +318,13 @@ float contentHeight =
     optionCount * optionHeight +
     speedControlHeight +
     40.f;
-    
-    content->setContentSize({
-        width,
-        contentHeight
-    });
 
-    y = contentHeight - 20.f;
+content->setContentSize({
+    width,
+    contentHeight
+});
+
+y = contentHeight - 20.f;
 
     // Speedhack
     addSection("SPEEDHACK", y);
@@ -402,6 +368,7 @@ addToggle(
     content->addChild(m_speedLabel);
 
     auto speedMenu = CCMenu::create();
+    speedMenu->setHandlerPriority(-130);
 
     auto minus = CCMenuItemSpriteExtra::create(
         CCLabelBMFont::create("-", "bigFont.fnt"),
@@ -462,18 +429,13 @@ m_speedLabel->setPosition(width - 60.f, y);
 
     // Footer
     auto footer = CCLabelBMFont::create(
-        "COBALT MOD MENU",
-        "goldFont.fnt"
-    );
-
-    footer->setScale(0.35f);
-    footer->setOpacity(130);
-    footer->setPosition(width / 2, 10.f);
-
-    footer->setPosition(
-    width / 2.f,
-    10.f
+    "COBALT MOD MENU",
+    "goldFont.fnt"
 );
+
+footer->setScale(0.35f);
+footer->setOpacity(130);
+footer->setPosition(width / 2.f, 10.f);
 
 m_panel->addChild(footer, 5);
 }
