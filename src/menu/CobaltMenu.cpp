@@ -307,35 +307,33 @@ void CobaltMenu::addToggle(
 
     float width = content->getContentSize().width;
 
-    // Row background
-    auto row = CCLayerColor::create(
-        {35, 43, 58, 210},
-        width - 18.f,
-        27.f
-    );
+// Row background
+auto row = CCLayerColor::create(
+    {35, 43, 58, 210},
+    width - 18.f,
+    27.f
+);
 
-    if (row) {
-        row->setPosition(
-            9.f,
-            y - 13.5f
-        );
+if (row) {
+    row->setPosition(9.f, y - 13.5f);
+    content->addChild(row, 0);
+}
 
-        content->addChild(row);
-    }
+// Option label
+auto label = CCLabelBMFont::create(
+    title,
+    "bigFont.fnt"
+);
 
-    // Label
-    auto label = CCLabelBMFont::create(
-        title,
-        "bigFont.fnt"
-    );
+if (label) {
+    label->setScale(0.50f);
+    label->setColor({255, 255, 255});
+    label->setOpacity(255);
+    label->setAnchorPoint({0.f, 0.5f});
+    label->setPosition(20.f, y);
 
-    if (label) {
-        label->setScale(0.42f);
-        label->setAnchorPoint({0.f, 0.5f});
-        label->setPosition(12.f, y);
-
-        content->addChild(label);
-    }
+    content->addChild(label, 2);
+}
 
     // Toggle sprites
     auto offSprite =
