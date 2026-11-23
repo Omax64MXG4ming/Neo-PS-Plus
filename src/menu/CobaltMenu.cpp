@@ -71,75 +71,127 @@ bool CobaltMenu::init() {
     return true;
 }
 
+// --------------------------------------------------
+// BUILD MENU
+// --------------------------------------------------
+
 void CobaltMenu::buildMenu() {
     auto win = CCDirector::sharedDirector()->getWinSize();
+
     float s = getUIScale(win);
 
-    float width = std::min(win.width - 24.f * s, 1000.f);
-    float height = std::min(win.height - 24.f * s, 680.f);
+    float width = std::min(
+        win.width - 24.f * s,
+        1000.f
+    );
+
+    float height = std::min(
+        win.height - 24.f * s,
+        680.f
+    );
 
     width = std::max(200.f, width);
     height = std::max(200.f, height);
 
-    // Fullscreen overlay
-    auto overlay = CCLayerColor::create({0, 0, 0, 145});
+    // Overlay
+    auto overlay = CCLayerColor::create(
+        {0, 0, 0, 145}
+    );
+
     if (!overlay)
         return;
 
     overlay->setContentSize(win);
     overlay->setPosition(0.f, 0.f);
+
     addChild(overlay, -1);
 
     // Main panel
-    auto panel = CCScale9Sprite::create("GJ_square01.png");
+    auto panel = CCScale9Sprite::create(
+        "GJ_square01.png"
+    );
+
     if (!panel)
         return;
 
     panel->setContentSize({width, height});
     panel->setColor({25, 32, 45});
     panel->setOpacity(245);
-    panel->setPosition(win.width / 2.f, win.height / 2.f);
+
+    panel->setPosition(
+        win.width / 2.f,
+        win.height / 2.f
+    );
 
     addChild(panel, 1);
+
     m_panel = panel;
 
     // Header
-    auto title = CCLabelBMFont::create("COBALT", "bigFont.fnt");
-    title->setScale(0.75f * s);
-    title->setPosition(width / 2.f, height - 25.f * s);
-    panel->addChild(title);
+    auto title = CCLabelBMFont::create(
+        "COBALT",
+        "bigFont.fnt"
+    );
 
-    auto subtitle = CCLabelBMFont::create("MOD MENU", "goldFont.fnt");
-    subtitle->setScale(0.38f * s);
-    subtitle->setColor({120, 220, 205});
-    subtitle->setPosition(width / 2.f, height - 49.f * s);
-    panel->addChild(subtitle);
+    if (title) {
+        title->setScale(0.75f * s);
+        title->setPosition(
+            width / 2.f,
+            height - 25.f * s
+        );
+
+        panel->addChild(title);
+    }
+
+    // Subtitle
+    auto subtitle = CCLabelBMFont::create(
+        "MOD MENU",
+        "goldFont.fnt"
+    );
+
+    if (subtitle) {
+        subtitle->setScale(0.38f * s);
+        subtitle->setColor({120, 220, 205});
+
+        subtitle->setPosition(
+            width / 2.f,
+            height - 49.f * s
+        );
+
+        panel->addChild(subtitle);
+    }
 
     // Close button
     auto closeMenu = CCMenu::create();
-    closeMenu->setPosition(0.f, 0.f);
-    closeMenu->setHandlerPriority(-130);
 
-    auto closeSprite = CCSprite::createWithSpriteFrameName(
-        "GJ_closeBtn_001.png"
-    );
+    if (closeMenu) {
+        closeMenu->setPosition(0.f, 0.f);
 
-    if (closeSprite) {
-        auto closeButton = CCMenuItemSpriteExtra::create(
-            closeSprite,
-            this,
-            menu_selector(CobaltMenu::onClose)
-        );
+        auto closeSprite =
+            CCSprite::createWithSpriteFrameName(
+                "GJ_closeBtn_001.png"
+            );
 
-        closeButton->setPosition(
-            width - 19.f * s,
-            height - 19.f * s
-        );
+        if (closeSprite) {
+            auto closeButton =
+                CCMenuItemSpriteExtra::create(
+                    closeSprite,
+                    this,
+                    menu_selector(CobaltMenu::onClose)
+                );
 
-        closeMenu->addChild(closeButton);
+            if (closeButton) {
+                closeButton->setPosition(
+                    width - 19.f * s,
+                    height - 19.f * s
+                );
+
+                closeMenu->addChild(closeButton);
+            }
+        }
+
+        panel->addChild(closeMenu, 10);
     }
-
-    panel->addChild(closeMenu, 10);
 
     // Separator
     auto separator = CCLayerColor::create(
@@ -148,8 +200,14 @@ void CobaltMenu::buildMenu() {
         1.f * s
     );
 
-    separator->setPosition(15.f * s, height - 65.f * s);
-    panel->addChild(separator);
+    if (separator) {
+        separator->setPosition(
+            15.f * s,
+            height - 65.f * s
+        );
+
+        panel->addChild(separator);
+    }
 
     // Scroll area
     float scrollWidth = width - 30.f * s;
@@ -163,7 +221,11 @@ void CobaltMenu::buildMenu() {
     if (!m_scroll)
         return;
 
-    m_scroll->setPosition(15.f * s, 22.f * s);
+    m_scroll->setPosition(
+        15.f * s,
+        22.f * s
+    );
+
     panel->addChild(m_scroll, 2);
 
     buildOptions();
@@ -178,9 +240,14 @@ void CobaltMenu::buildMenu() {
         )
     );
 
-    panel->runAction(CCFadeTo::create(0.18f, 245));
+    panel->runAction(
+        CCFadeTo::create(0.18f, 245)
+    );
 }
 
+// --------------------------------------------------
+// TOUCH
+// --------------------------------------------------
 
 void CobaltMenu::registerWithTouchDispatcher() {
     CCTouchDispatcher::get()->addTargetedDelegate(
@@ -197,6 +264,10 @@ bool CobaltMenu::ccTouchBegan(
     return true;
 }
 
+// --------------------------------------------------
+// SECTION
+// --------------------------------------------------
+
 void CobaltMenu::addSection(
     const char* title,
     float& y
@@ -208,6 +279,9 @@ void CobaltMenu::addSection(
         "goldFont.fnt"
     );
 
+    if (!label)
+        return;
+
     label->setScale(0.48f);
     label->setColor({65, 205, 180});
 
@@ -218,6 +292,10 @@ void CobaltMenu::addSection(
 
     y -= 27.f;
 }
+
+// --------------------------------------------------
+// TOGGLE
+// --------------------------------------------------
 
 void CobaltMenu::addToggle(
     const char* title,
@@ -236,29 +314,39 @@ void CobaltMenu::addToggle(
         27.f
     );
 
-    row->setPosition(9.f, y - 13.5f);
-    content->addChild(row);
+    if (row) {
+        row->setPosition(
+            9.f,
+            y - 13.5f
+        );
 
-    // Option label
+        content->addChild(row);
+    }
+
+    // Label
     auto label = CCLabelBMFont::create(
         title,
         "bigFont.fnt"
     );
 
-    label->setScale(0.42f);
-    label->setAnchorPoint({0.f, 0.5f});
-    label->setPosition(12.f, y);
+    if (label) {
+        label->setScale(0.42f);
+        label->setAnchorPoint({0.f, 0.5f});
+        label->setPosition(12.f, y);
 
-    content->addChild(label);
+        content->addChild(label);
+    }
 
     // Toggle sprites
-    auto offSprite = CCSprite::createWithSpriteFrameName(
-        "GJ_checkOff_001.png"
-    );
+    auto offSprite =
+        CCSprite::createWithSpriteFrameName(
+            "GJ_checkOff_001.png"
+        );
 
-    auto onSprite = CCSprite::createWithSpriteFrameName(
-        "GJ_checkOn_001.png"
-    );
+    auto onSprite =
+        CCSprite::createWithSpriteFrameName(
+            "GJ_checkOn_001.png"
+        );
 
     if (!offSprite || !onSprite) {
         log::warn("Cobalt: Could not load toggle sprites");
@@ -269,7 +357,7 @@ void CobaltMenu::addToggle(
     offSprite->setScale(0.65f);
     onSprite->setScale(0.65f);
 
-    // Toggle
+    // Toggle item
     auto toggle = CCMenuItemToggler::create(
         offSprite,
         onSprite,
@@ -287,122 +375,165 @@ void CobaltMenu::addToggle(
     if (value)
         toggle->toggle(true);
 
+    // Toggle menu
     auto menu = CCMenu::create();
-menu->setPosition(width - 29.f, y);
-menu->setHandlerPriority(-130);
 
-menu->addChild(toggle);
-content->addChild(menu);
+    if (!menu) {
+        y -= 32.f;
+        return;
+    }
+
+    menu->setPosition(
+        width - 29.f,
+        y
+    );
+
+    menu->addChild(toggle);
+
+    content->addChild(menu);
 
     y -= 32.f;
 }
+
+// --------------------------------------------------
+// BUILD OPTIONS
+// --------------------------------------------------
 
 void CobaltMenu::buildOptions() {
     auto content = m_scroll->m_contentLayer;
 
     float width = m_scroll->getContentSize().width;
 
-    float y = 0.f;
+    constexpr int sectionCount = 5;
+    constexpr int optionCount = 18;
 
-    // Count all rows to calculate scroll content height.
-constexpr int sectionCount = 5;
-constexpr int optionCount = 18;
+    constexpr float sectionHeight = 27.f;
+    constexpr float optionHeight = 32.f;
+    constexpr float speedControlHeight = 40.f;
 
-constexpr float sectionHeight = 27.f;
-constexpr float optionHeight = 32.f;
-constexpr float speedControlHeight = 40.f;
+    float contentHeight =
+        40.f +
+        sectionCount * sectionHeight +
+        optionCount * optionHeight +
+        speedControlHeight +
+        40.f;
 
-float contentHeight =
-    40.f +
-    sectionCount * sectionHeight +
-    optionCount * optionHeight +
-    speedControlHeight +
-    40.f;
+    content->setContentSize({
+        width,
+        contentHeight
+    });
 
-content->setContentSize({
-    width,
-    contentHeight
-});
+    float y = contentHeight - 20.f;
 
-y = contentHeight - 20.f;
-
-    // Speedhack
+    // SPEEDHACK
     addSection("SPEEDHACK", y);
 
     addToggle(
-    "Enable Speedhack",
-    SpeedHack,
-    cobalt::g_state.speedhack,
-    y
-);
+        "Enable Speedhack",
+        SpeedHack,
+        cobalt::g_state.speedhack,
+        y
+    );
 
-addToggle(
-    "Speedhack Song",
-    SpeedSong,
-    cobalt::g_state.speedhackSong,
-    y
-);
+    addToggle(
+        "Speedhack Song",
+        SpeedSong,
+        cobalt::g_state.speedhackSong,
+        y
+    );
 
-    // Speed controls
+    // Speed title
     auto speedTitle = CCLabelBMFont::create(
         "Speed",
         "bigFont.fnt"
     );
 
-    speedTitle->setScale(0.43f);
-    speedTitle->setAnchorPoint({0.f, 0.5f});
-    speedTitle->setPosition(12.f, y);
+    if (speedTitle) {
+        speedTitle->setScale(0.43f);
+        speedTitle->setAnchorPoint({0.f, 0.5f});
+        speedTitle->setPosition(12.f, y);
 
-    content->addChild(speedTitle);
+        content->addChild(speedTitle);
+    }
 
+    // Speed value
     m_speedLabel = CCLabelBMFont::create(
-    fmt::format(
-        "{:.2f}x",
-        cobalt::g_state.speed
-    ).c_str(),
-    "bigFont.fnt"
-);
+        fmt::format(
+            "{:.2f}x",
+            cobalt::g_state.speed
+        ).c_str(),
+        "bigFont.fnt"
+    );
 
-    m_speedLabel->setScale(0.43f);
+    if (m_speedLabel) {
+        m_speedLabel->setScale(0.43f);
 
-    content->addChild(m_speedLabel);
+        m_speedLabel->setPosition(
+            width - 60.f,
+            y
+        );
 
+        content->addChild(m_speedLabel);
+    }
+
+    // Speed buttons
     auto speedMenu = CCMenu::create();
-    speedMenu->setHandlerPriority(-130);
 
-    auto minus = CCMenuItemSpriteExtra::create(
-        CCLabelBMFont::create("-", "bigFont.fnt"),
-        this,
-        menu_selector(CobaltMenu::onSpeedDown)
-    );
+    if (speedMenu) {
+        auto minusLabel = CCLabelBMFont::create(
+            "-",
+            "bigFont.fnt"
+        );
 
-    auto plus = CCMenuItemSpriteExtra::create(
-        CCLabelBMFont::create("+", "bigFont.fnt"),
-        this,
-        menu_selector(CobaltMenu::onSpeedUp)
-    );
+        auto plusLabel = CCLabelBMFont::create(
+            "+",
+            "bigFont.fnt"
+        );
 
-    minus->setPosition(width - 105.f, y);
-plus->setPosition(width - 15.f, y);
+        if (minusLabel && plusLabel) {
+            auto minus = CCMenuItemSpriteExtra::create(
+                minusLabel,
+                this,
+                menu_selector(CobaltMenu::onSpeedDown)
+            );
 
-m_speedLabel->setPosition(width - 60.f, y);
-    
-    speedMenu->addChild(minus);
-    speedMenu->addChild(plus);
+            auto plus = CCMenuItemSpriteExtra::create(
+                plusLabel,
+                this,
+                menu_selector(CobaltMenu::onSpeedUp)
+            );
 
-    speedMenu->setPosition(0, 0);
-    content->addChild(speedMenu);
+            if (minus && plus) {
+                minus->setPosition(
+                    width - 105.f,
+                    y
+                );
 
-    y -= 40.f;
+                plus->setPosition(
+                    width - 15.f,
+                    y
+                );
 
-    // Gameplay
+                speedMenu->addChild(minus);
+                speedMenu->addChild(plus);
+            }
+        }
+
+        speedMenu->setPosition(0.f, 0.f);
+
+        content->addChild(speedMenu);
+    }
+
+    y -= speedControlHeight;
+
+    // GAMEPLAY
     addSection("GAMEPLAY", y);
 
     addToggle("Noclip", Noclip, cobalt::g_state.noclip, y);
     addToggle("No Collision", NoCollision, cobalt::g_state.noCollision, y);
     addToggle("Auto Complete", AutoComplete, cobalt::g_state.autoComplete, y);
 
-    // Level
+    // LEVEL
     addSection("LEVEL", y);
 
     addToggle("Auto LDM", AutoLDM, cobalt::g_state.autoLDM, y);
@@ -410,7 +541,7 @@ m_speedLabel->setPosition(width - 60.f, y);
     addToggle("Edit Hack", EditHack, cobalt::g_state.editHack, y);
     addToggle("No Quit", DisableQuit, cobalt::g_state.disableQuit, y);
 
-    // Bypass
+    // BYPASS
     addSection("BYPASS", y);
 
     addToggle("Icon Bypass", IconBypass, cobalt::g_state.iconBypass, y);
@@ -419,7 +550,7 @@ m_speedLabel->setPosition(width - 60.f, y);
     addToggle("Slider Bypass", SliderBypass, cobalt::g_state.sliderHack, y);
     addToggle("Verify Hack", AutoVerify, cobalt::g_state.autoVerify, y);
 
-    // Visual
+    // VISUAL
     addSection("VISUAL", y);
 
     addToggle("No Hide Player", NoHide, cobalt::g_state.noHide, y);
@@ -429,16 +560,26 @@ m_speedLabel->setPosition(width - 60.f, y);
 
     // Footer
     auto footer = CCLabelBMFont::create(
-    "COBALT MOD MENU",
-    "goldFont.fnt"
-);
+        "COBALT MOD MENU",
+        "goldFont.fnt"
+    );
 
-footer->setScale(0.35f);
-footer->setOpacity(130);
-footer->setPosition(width / 2.f, 10.f);
+    if (footer) {
+        footer->setScale(0.35f);
+        footer->setOpacity(130);
 
-m_panel->addChild(footer, 5);
+        footer->setPosition(
+            width / 2.f,
+            10.f
+        );
+
+        m_panel->addChild(footer, 5);
+    }
 }
+
+// --------------------------------------------------
+// TOGGLE CALLBACK
+// --------------------------------------------------
 
 void CobaltMenu::onToggle(CCObject* sender) {
     auto item = static_cast<CCMenuItemToggler*>(sender);
@@ -518,7 +659,7 @@ void CobaltMenu::onToggle(CCObject* sender) {
             cobalt::g_state.speedhack = value;
             cobalt::applySpeedhack();
             break;
-        
+
         case SpeedSong:
             cobalt::g_state.speedhackSong = value;
             cobalt::applySpeedhack();
@@ -528,6 +669,10 @@ void CobaltMenu::onToggle(CCObject* sender) {
     cobalt::save();
 }
 
+// --------------------------------------------------
+// SPEED CALLBACKS
+// --------------------------------------------------
+
 void CobaltMenu::onSpeedDown(CCObject*) {
     cobalt::g_state.speed = std::max(
         0.5f,
@@ -536,11 +681,15 @@ void CobaltMenu::onSpeedDown(CCObject*) {
 
     if (m_speedLabel) {
         m_speedLabel->setString(
-            fmt::format("{:.2f}x", cobalt::g_state.speed).c_str()
+            fmt::format(
+                "{:.2f}x",
+                cobalt::g_state.speed
+            ).c_str()
         );
     }
 
     cobalt::applySpeedhack();
+    cobalt::save();
 }
 
 void CobaltMenu::onSpeedUp(CCObject*) {
@@ -551,16 +700,28 @@ void CobaltMenu::onSpeedUp(CCObject*) {
 
     if (m_speedLabel) {
         m_speedLabel->setString(
-            fmt::format("{:.2f}x", cobalt::g_state.speed).c_str()
+            fmt::format(
+                "{:.2f}x",
+                cobalt::g_state.speed
+            ).c_str()
         );
     }
 
     cobalt::applySpeedhack();
+    cobalt::save();
 }
+
+// --------------------------------------------------
+// CLOSE
+// --------------------------------------------------
 
 void CobaltMenu::onClose(CCObject*) {
     this->removeFromParentAndCleanup(true);
 }
+
+// --------------------------------------------------
+// TOGGLE MENU
+// --------------------------------------------------
 
 void CobaltMenu::toggle() {
     auto scene = CCDirector::sharedDirector()->getRunningScene();
