@@ -1,11 +1,9 @@
 # 1.1.2
-* Update compatibility with geode v6.0.0-beta.2
+* Update compatibility with geode v6.0.0-beta.3
 * Added Orbit Pool ScreenSaver Configurable 
 * Ultimate LDM Options 
 * Layers + Better Fixes 
 * Adjusted Updater Changes 
-* Custom Menu Mod in Game
-
 # 1.1.1
 Updated the Updater
 
