@@ -10,6 +10,19 @@ using namespace geode::prelude;
 
 namespace {
 
+float getUIScale(const CCSize& size) {
+    constexpr float referenceWidth = 854.f;
+    constexpr float referenceHeight = 480.f;
+
+    float scaleX = size.width / referenceWidth;
+    float scaleY = size.height / referenceHeight;
+
+    return std::max(
+        0.55f,
+        std::min(1.f, std::min(scaleX, scaleY))
+    );
+}
+
 enum ToggleID {
     Noclip = 1,
     NoCollision,
@@ -59,14 +72,23 @@ bool CobaltMenu::init() {
 }
 
 void CobaltMenu::buildMenu() {
-    auto win = CCDirector::sharedDirector()->getWinSize();
+auto win = CCDirector::sharedDirector()->getWinSize();
 
-    // Background overlay
-    auto overlay = CCLayerColor::create(
-    {0, 0, 0, 175},
-    win.width,
-    win.height
+float s = getUIScale(win);
+
+// Responsive panel
+float width = std::min(
+    win.width - 24.f * s,
+    1000.f
 );
+
+float height = std::min(
+    win.height - 24.f * s,
+    680.f
+);
+
+width = std::max(0.f, width);
+height = std::max(0.f, height);
 
 overlay->setPosition(0.f, 0.f);
 addChild(overlay, -1);
@@ -85,9 +107,9 @@ addChild(overlay, -1);
     panel->setOpacity(245);
 
     panel->setPosition(
-        win.width / 2,
-        win.height / 2
-    );
+    win.width / 2.f,
+    win.height / 2.f
+);
 
     addChild(panel, 1);
 
@@ -159,18 +181,26 @@ panel->addChild(closeMenu, 10);
     panel->addChild(separator);
 
     // Scroll area
-    float scrollWidth = width - 30.f;
-    float scrollHeight = height - 115.f;
+// Scroll area
+float scrollWidth = width - 30.f * s;
+float scrollHeight = height - 115.f * s;
 
 m_scroll = ScrollLayer::create({
     scrollWidth,
     scrollHeight
 });
 
-    m_scroll->setPosition(15.f, 25.f);
-    panel->addChild(m_scroll, 2);
+if (!m_scroll)
+    return;
 
-    buildOptions();
+m_scroll->setPosition(
+    15.f * s,
+    22.f * s
+);
+
+panel->addChild(m_scroll, 2);
+
+buildOptions();
 
     // Opening animation
     panel->setScale(0.85f);
@@ -309,14 +339,19 @@ void CobaltMenu::buildOptions() {
     float y = 0.f;
 
     // Count all rows to calculate scroll content height.
-    constexpr int sectionCount = 5;
-    constexpr int optionCount = 19;
+constexpr int sectionCount = 5;
+constexpr int optionCount = 18;
+
+constexpr float sectionHeight = 27.f;
+constexpr float optionHeight = 32.f;
+constexpr float speedControlHeight = 40.f;
 
 float contentHeight =
     40.f +
-    sectionCount * 27.f +
-    optionCount * 32.f +
-    70.f;
+    sectionCount * sectionHeight +
+    optionCount * optionHeight +
+    speedControlHeight +
+    40.f;
     
     content->setContentSize({
         width,
@@ -435,7 +470,12 @@ m_speedLabel->setPosition(width - 60.f, y);
     footer->setOpacity(130);
     footer->setPosition(width / 2, 10.f);
 
-    content->addChild(footer);
+    footer->setPosition(
+    width / 2.f,
+    10.f
+);
+
+m_panel->addChild(footer, 5);
 }
 
 void CobaltMenu::onToggle(CCObject* sender) {
