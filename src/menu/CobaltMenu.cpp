@@ -6,7 +6,6 @@
 #include <Geode/modify/CCTouchDispatcher.hpp>
 
 using namespace geode::prelude;
-
 namespace {
 
 float getUIScale(const CCSize& size) {
