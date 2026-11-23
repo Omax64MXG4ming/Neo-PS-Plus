@@ -14,56 +14,6 @@ using namespace geode::prelude;
 
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 
-#include "menu/CobaltMenu.hpp"
-#include "features/CobaltState.hpp"
-
-using namespace geode::prelude;
-
-// --------------------------------------------------
-// KEYBOARD SHORTCUTS
-// --------------------------------------------------
-
-class $modify(CobaltKeyboard, CCKeyboardDispatcher) {
-    bool dispatchKeyboardMSG(
-        enumKeyCodes key,
-        bool isKeyDown,
-        bool isKeyRepeat,
-        double timestamp
-    ) {
-        if (isKeyDown && !isKeyRepeat) {
-            // TAB: Toggle Cobalt Menu
-            if (key == enumKeyCodes::KEY_Tab) {
-                CobaltMenu::toggle();
-            }
-
-            // F: Toggle Speedhack
-            if (key == enumKeyCodes::KEY_F) {
-                cobalt::g_state.speedhack =
-                    !cobalt::g_state.speedhack;
-
-                cobalt::applySpeedhack();
-            }
-        }
-
-        return CCKeyboardDispatcher::dispatchKeyboardMSG(
-            key,
-            isKeyDown,
-            isKeyRepeat,
-            timestamp
-        );
-    }
-};
-
-// --------------------------------------------------
-// MOD INITIALIZATION
-// --------------------------------------------------
-
-$on_mod(Loaded) {
-    cobalt::load();
-    cobalt::applyPatches();
-}
-
-
 // Neo Buttons
 //class $modify(NeoCustomMenuButton, MenuLayer) {
 
