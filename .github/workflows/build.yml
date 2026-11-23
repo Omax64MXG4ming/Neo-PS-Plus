@@ -23,8 +23,8 @@ jobs:
             target: Android64
 
           - name: Android32
-           os: ubuntu-latest
-           target: Android32
+            os: ubuntu-latest
+            target: Android32
 
           - name: Windows
             os: windows-2022
