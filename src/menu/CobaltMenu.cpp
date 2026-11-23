@@ -297,14 +297,14 @@ void CobaltMenu::buildOptions() {
 
     // Count all rows to calculate scroll content height.
     constexpr int sectionCount = 5;
-    constexpr int optionCount = 18;
+    constexpr int optionCount = 19;
 
-    float contentHeight =
-        25.f +
-        sectionCount * 27.f +
-        optionCount * 32.f +
-        50.f;
-
+float contentHeight =
+    40.f +
+    sectionCount * 27.f +
+    optionCount * 32.f +
+    70.f;
+    
     content->setContentSize({
         width,
         contentHeight
@@ -350,7 +350,6 @@ addToggle(
 );
 
     m_speedLabel->setScale(0.43f);
-    m_speedLabel->setPosition(width - 85.f, y);
 
     content->addChild(m_speedLabel);
 
@@ -368,9 +367,11 @@ addToggle(
         menu_selector(CobaltMenu::onSpeedUp)
     );
 
-    minus->setPosition(width - 53.f, y);
-    plus->setPosition(width - 20.f, y);
+    minus->setPosition(width - 105.f, y);
+plus->setPosition(width - 15.f, y);
 
+m_speedLabel->setPosition(width - 60.f, y);
+    
     speedMenu->addChild(minus);
     speedMenu->addChild(plus);
 
@@ -543,7 +544,7 @@ void CobaltMenu::onSpeedUp(CCObject*) {
 }
 
 void CobaltMenu::onClose(CCObject*) {
-    toggle();
+    this->removeFromParentAndCleanup(true);
 }
 
 void CobaltMenu::toggle() {
