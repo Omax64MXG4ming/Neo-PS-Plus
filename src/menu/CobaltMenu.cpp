@@ -289,49 +289,47 @@ void CobaltMenu::addToggle(
 ) {
     auto content = m_scroll->m_contentLayer;
 
-    float width = content->getContentSize().width;
+    const float width = content->getContentSize().width;
 
-// Row background
-auto row = CCLayerColor::create(
-    {35, 43, 58, 210},
-    width - 18.f,
-    27.f
-);
+    // Row background
+    auto row = CCLayerColor::create(
+        {35, 43, 58, 210},
+        width - 18.f,
+        27.f
+    );
 
-if (row) {
-    row->setPosition(9.f, y - 13.5f);
-    content->addChild(row, 0);
-}
+    if (row) {
+        row->setAnchorPoint({0.f, 0.5f});
+        row->setPosition(9.f, y);
+        content->addChild(row, 0);
+    }
 
-// Option label
-auto label = CCLabelBMFont::create(
-    title,
-    "bigFont.fnt"
-);
+    // Label
+    auto label = CCLabelBMFont::create(
+        title,
+        "bigFont.fnt"
+    );
 
-if (label) {
-    label->setScale(0.50f);
-    label->setColor({255, 255, 255});
-    label->setOpacity(255);
-    label->setAnchorPoint({0.f, 0.5f});
-    label->setPosition(20.f, y);
+    if (label) {
+        label->setScale(0.50f);
+        label->setColor({255, 255, 255});
+        label->setOpacity(255);
+        label->setAnchorPoint({0.f, 0.5f});
+        label->setPosition(20.f, y);
 
-    content->addChild(label, 2);
-}
+        content->addChild(label, 2);
+    }
 
     // Toggle sprites
-    auto offSprite =
-        CCSprite::createWithSpriteFrameName(
-            "GJ_checkOff_001.png"
-        );
+    auto offSprite = CCSprite::createWithSpriteFrameName(
+        "GJ_checkOff_001.png"
+    );
 
-    auto onSprite =
-        CCSprite::createWithSpriteFrameName(
-            "GJ_checkOn_001.png"
-        );
+    auto onSprite = CCSprite::createWithSpriteFrameName(
+        "GJ_checkOn_001.png"
+    );
 
     if (!offSprite || !onSprite) {
-        log::warn("Cobalt: Could not load toggle sprites");
         y -= 32.f;
         return;
     }
@@ -339,7 +337,6 @@ if (label) {
     offSprite->setScale(0.65f);
     onSprite->setScale(0.65f);
 
-    // Toggle item
     auto toggle = CCMenuItemToggler::create(
         offSprite,
         onSprite,
@@ -357,22 +354,13 @@ if (label) {
     if (value)
         toggle->toggle(true);
 
-    // Toggle menu
     auto menu = CCMenu::create();
 
-    if (!menu) {
-        y -= 32.f;
-        return;
+    if (menu) {
+        menu->setPosition(width - 29.f, y);
+        menu->addChild(toggle);
+        content->addChild(menu, 3);
     }
-
-    menu->setPosition(
-        width - 29.f,
-        y
-    );
-
-    menu->addChild(toggle);
-
-    content->addChild(menu);
 
     y -= 32.f;
 }
@@ -560,16 +548,23 @@ void CobaltMenu::buildOptions() {
 
         m_panel->addChild(footer, 5);
     }
+    
+auto content = m_scroll->m_contentLayer;
 
 log::debug(
-    "Cobalt UI | Panel: {}x{} | Scroll: {}x{} | Content: {}x{}",
-    m_panel->getContentSize().width,
-    m_panel->getContentSize().height,
-    m_scroll->getContentSize().width,
-    m_scroll->getContentSize().height,
-    m_scroll->m_contentLayer->getContentSize().width,
-    m_scroll->m_contentLayer->getContentSize().height
- );
+    "Cobalt Transform | Panel scale: {} | Scroll scale: {} | Content scale: {}",
+    m_panel->getScale(),
+    m_scroll->getScale(),
+    content->getScale()
+);
+
+log::debug(
+    "Cobalt Position | Scroll: ({}, {}) | Content: ({}, {})",
+    m_scroll->getPositionX(),
+    m_scroll->getPositionY(),
+    content->getPositionX(),
+    content->getPositionY()
+);
 
 }
 // --------------------------------------------------
