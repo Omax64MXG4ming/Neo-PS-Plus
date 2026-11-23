@@ -548,8 +548,6 @@ void CobaltMenu::buildOptions() {
         m_panel->addChild(footer, 5);
     }
     
-auto content = m_scroll->m_contentLayer;
-
 log::debug(
     "Cobalt Transform | Panel scale: {} | Scroll scale: {} | Content scale: {}",
     m_panel->getScale(),
