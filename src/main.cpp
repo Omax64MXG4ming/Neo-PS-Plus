@@ -172,7 +172,6 @@ class $modify(NeoCustomMenuButton, MenuLayer) {
 
         return true;
     }
- }
 
     // ----------------------------------------------
     // BUTTON CALLBACKS
