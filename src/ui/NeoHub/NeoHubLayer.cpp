@@ -1,6 +1,7 @@
 #include "NeoHubLayer.hpp"
 
 #include <Geode/Geode.hpp>
+#include <Geode/utils/web.hpp>
 #include <algorithm>
 
 using namespace geode::prelude;
@@ -10,9 +11,12 @@ namespace neo::ui {
 class NeoHubLayer : public CCLayerColor {
 protected:
     CCNode* m_originalMenu = nullptr;
+    CCMenu* m_menu = nullptr;
 
     CCLabelBMFont* m_pageTitle = nullptr;
     CCLabelBMFont* m_pageDescription = nullptr;
+
+    int m_currentPage = 0;
 
     // ------------------------------------------
     // INITIALIZATION
@@ -26,25 +30,18 @@ protected:
 
         auto winSize = CCDirector::get()->getWinSize();
 
-        auto center = ccp(
-            winSize.width / 2.f,
-            winSize.height / 2.f
-        );
-
         this->setContentSize(winSize);
         this->setPosition(CCPointZero);
         this->setKeypadEnabled(true);
 
-        // --------------------------------------
-        // RESPONSIVE CONTAINER
-        // --------------------------------------
-
         auto container = CCNode::create();
-
         if (!container)
             return false;
 
-        container->setPosition(center);
+        container->setPosition(ccp(
+            winSize.width / 2.f,
+            winSize.height / 2.f
+        ));
 
         float scale = std::min({
             1.f,
@@ -53,23 +50,18 @@ protected:
         });
 
         container->setScale(scale);
-
         this->addChild(container);
 
         // --------------------------------------
-        // MAIN PANEL
+        // PANEL
         // --------------------------------------
 
-        auto panel = CCScale9Sprite::create(
-            "GJ_square01.png"
-        );
-
+        auto panel = CCScale9Sprite::create("GJ_square01.png");
         if (!panel)
             return false;
 
         panel->setContentSize({420.f, 270.f});
         panel->setPosition(CCPointZero);
-
         container->addChild(panel);
 
         // --------------------------------------
@@ -77,27 +69,24 @@ protected:
         // --------------------------------------
 
         auto header = CCLabelBMFont::create(
-            "NEO HUB",
+            "Extras",
             "goldFont.fnt"
         );
 
         if (header) {
-            header->setPosition(ccp(0.f, 105.f));
-            header->setScale(1.f);
-
+            header->setPosition(ccp(0.f, 108.f));
             container->addChild(header);
         }
 
         auto subtitle = CCLabelBMFont::create(
-            "Neo PS Plus - Custom Interface",
+            "Neo PS Plus - Extra Pag",
             "bigFont.fnt"
         );
 
         if (subtitle) {
-            subtitle->setPosition(ccp(0.f, 78.f));
+            subtitle->setPosition(ccp(0.f, 80.f));
             subtitle->setScale(0.4f);
             subtitle->setColor({180, 210, 255});
-
             container->addChild(subtitle);
         }
 
@@ -106,14 +95,13 @@ protected:
         // --------------------------------------
 
         m_pageTitle = CCLabelBMFont::create(
-            "Welcome to Neo Hub",
+            "Welcome to PS Neo Hub",
             "goldFont.fnt"
         );
 
         if (m_pageTitle) {
-            m_pageTitle->setPosition(ccp(0.f, 30.f));
+            m_pageTitle->setPosition(ccp(0.f, 43.f));
             m_pageTitle->setScale(0.65f);
-
             container->addChild(m_pageTitle);
         }
 
@@ -123,10 +111,9 @@ protected:
         );
 
         if (m_pageDescription) {
-            m_pageDescription->setPosition(ccp(0.f, 0.f));
-            m_pageDescription->setScale(0.42f);
+            m_pageDescription->setPosition(ccp(0.f, 18.f));
+            m_pageDescription->setScale(0.38f);
             m_pageDescription->setColor({200, 220, 255});
-
             container->addChild(m_pageDescription);
         }
 
@@ -134,82 +121,14 @@ protected:
         // NAVIGATION MENU
         // --------------------------------------
 
-        auto menu = CCMenu::create();
-
-        if (!menu)
+        m_menu = CCMenu::create();
+        if (!m_menu)
             return false;
 
-        menu->setPosition(CCPointZero);
+        m_menu->setPosition(CCPointZero);
+        container->addChild(m_menu, 5);
 
-        container->addChild(menu, 5);
-
-        // HOME
-        auto home = createButton(
-            "HOME",
-            menu_selector(NeoHubLayer::onHome)
-        );
-
-        if (home) {
-            home->setPosition(ccp(-150.f, -65.f));
-            menu->addChild(home);
-        }
-
-        // FEATURES
-        auto features = createButton(
-            "FEATURES",
-            menu_selector(NeoHubLayer::onFeatures)
-        );
-
-        if (features) {
-            features->setPosition(ccp(-50.f, -65.f));
-            menu->addChild(features);
-        }
-
-        // SETTINGS
-        auto settings = createButton(
-            "SETTINGS",
-            menu_selector(NeoHubLayer::onSettings)
-        );
-
-        if (settings) {
-            settings->setPosition(ccp(50.f, -65.f));
-            menu->addChild(settings);
-        }
-
-        // ABOUT
-        auto about = createButton(
-            "ABOUT",
-            menu_selector(NeoHubLayer::onAbout)
-        );
-
-        if (about) {
-            about->setPosition(ccp(150.f, -65.f));
-            menu->addChild(about);
-        }
-
-        // --------------------------------------
-        // BACK BUTTON
-        // --------------------------------------
-
-        auto back = createButton(
-            "BACK",
-            menu_selector(NeoHubLayer::onBack)
-        );
-
-        if (back) {
-            back->setPosition(ccp(0.f, -112.f));
-            menu->addChild(back);
-        }
-
-        // --------------------------------------
-        // TOUCH AND KEYBOARD
-        // --------------------------------------
-
-        this->setTouchEnabled(true);
-        this->setTouchMode(kCCTouchesOneByOne);
-
-        // Menus normally process their buttons first.
-        this->setTouchPriority(0);
+        showPage(0);
 
         return true;
     }
@@ -239,8 +158,22 @@ protected:
         );
     }
 
+    void addButton(
+        const char* text,
+        float x,
+        float y,
+        SEL_MenuHandler callback
+    ) {
+        auto button = createButton(text, callback);
+        if (!button)
+            return;
+
+        button->setPosition(ccp(x, y));
+        m_menu->addChild(button);
+    }
+
     // ------------------------------------------
-    // PAGE HANDLER
+    // PAGE TEXT
     // ------------------------------------------
 
     void setPage(
@@ -255,55 +188,190 @@ protected:
     }
 
     // ------------------------------------------
-    // HOME
+    // PAGE NAVIGATION
     // ------------------------------------------
 
-    void onHome(CCObject*) {
-        setPage(
-            "Welcome to Neo Hub",
-            "Your custom Geometry Dash experience."
-        );
+    void clearButtons() {
+        if (m_menu)
+            m_menu->removeAllChildrenWithCleanup(true);
+    }
 
-        log::info("[NeoHub] Home opened.");
+    void showPage(int page) {
+        if (!m_menu)
+            return;
+
+        m_currentPage = page;
+        clearButtons();
+
+        // --------------------------------------
+        // PAGE 1
+        // --------------------------------------
+
+        if (page == 0) {
+            setPage(
+                "Welcome to Neo PS Hub",
+                "Explore the Neo PS Plus experience. (._.)"
+            );
+
+            addButton(
+                "COMMUNITY",
+                -105.f, -42.f,
+                menu_selector(NeoHubLayer::onCommunity)
+            );
+
+            addButton(
+                "CREDITS",
+                105.f, -42.f,
+                menu_selector(NeoHubLayer::onCredits)
+            );
+
+            addButton(
+                "DASHBOARD",
+                -105.f, -88.f,
+                menu_selector(NeoHubLayer::onDashboard)
+            );
+
+            addButton(
+                "CHANGELOG",
+                105.f, -88.f,
+                menu_selector(NeoHubLayer::onChangelog)
+            );
+
+            addButton(
+                "NEXT >",
+                0.f, -122.f,
+                menu_selector(NeoHubLayer::onNext)
+            );
+        }
+
+        // --------------------------------------
+        // PAGE 2
+        // --------------------------------------
+
+        else if (page == 1) {
+            setPage(
+                "Neo PS",
+                "Discover more options and information."
+            );
+
+
+            addButton(
+                "< PREVIOUS",
+                105.f, -94.f,
+                menu_selector(NeoHubLayer::onPrevious)
+            );
+
+            addButton(
+                "BACK TO GAME",
+                0.f, -122.f,
+                menu_selector(NeoHubLayer::onBack)
+            );
+        }
+
+        // --------------------------------------
+        // INFORMATION PAGES
+        // --------------------------------------
+
+        else if (page == 2) {
+            setPage(
+                "Neo PS Credits",
+                "Created with contributions from the Neo PS team and Better Utils Codes"
+            );
+
+            addButton(
+                "BACK",
+                0.f, -100.f,
+                menu_selector(NeoHubLayer::onReturnHome)
+            );
+        }
+
+        else if (page == 3) {
+            setPage(
+                "Neo PS Changelog",
+                "Latest mod changes."
+            );
+
+            addButton(
+                "BACK",
+                0.f, -100.f,
+                menu_selector(NeoHubLayer::onReturnHome)
+            );
+        }
+
+            addButton(
+                "BACK",
+                0.f, -100.f,
+                menu_selector(NeoHubLayer::onReturnHome)
+            );
+        }
+            addButton(
+                "BACK",
+                0.f, -100.f,
+                menu_selector(NeoHubLayer::onReturnHome)
+            );
+        }
+}
+
+            addButton(
+                "BACK",
+                0.f, -100.f,
+                menu_selector(NeoHubLayer::onReturnHome)
+            );
+        }
     }
 
     // ------------------------------------------
-    // FEATURES
+    // COMMUNITY
     // ------------------------------------------
 
-    void onFeatures(CCObject*) {
-        setPage(
-            "Neo Features",
-            "Your Neo PS Plus features will appear here."
+    void onCommunity(CCObject*) {
+        utils::web::openLinkInBrowser(
+            "https://discord.gg/TdB33cAyMn"
         );
-
-        log::info("[NeoHub] Features opened.");
     }
 
     // ------------------------------------------
-    // SETTINGS
+    // DASHBOARD
     // ------------------------------------------
 
-    void onSettings(CCObject*) {
-        setPage(
-            "Neo Settings",
-            "Customize your Neo PS Plus experience."
-        );
+    void onDashboard(CCObject*) {
 
-        log::info("[NeoHub] Settings opened.");
+        utils::web::openLinkInBrowser(
+            "https://neops.x10.mx/dashboard"
+        );
     }
 
     // ------------------------------------------
-    // ABOUT
+    // CREDITS
     // ------------------------------------------
 
-    void onAbout(CCObject*) {
-        setPage(
-            "About Neo PS Plus",
-            "Created for the Neo PS community."
-        );
+    void onCredits(CCObject*) {
+        showPage(2);
+    }
 
-        log::info("[NeoHub] About opened.");
+    // ------------------------------------------
+    // CHANGELOG
+    // ------------------------------------------
+
+    void onChangelog(CCObject*) {
+        utils::web::openLinkInBrowser(
+            "https://github.com/Omax64MXG4ming/Neo-PS-Plus/releases"
+        );
+    }
+    // ------------------------------------------
+    // NEXT / PREVIOUS
+    // ------------------------------------------
+
+    void onNext(CCObject*) {
+        showPage(1);
+    }
+
+    void onPrevious(CCObject*) {
+        showPage(0);
+    }
+
+    void onReturnHome(CCObject*) {
+        showPage(0);
     }
 
     // ------------------------------------------
@@ -319,10 +387,8 @@ protected:
     }
 
     void onExit() override {
-        // Restore original MenuLayer when leaving the Hub.
-        if (m_originalMenu) {
+        if (m_originalMenu)
             m_originalMenu->setVisible(true);
-        }
 
         CCLayerColor::onExit();
     }
@@ -339,11 +405,6 @@ public:
         CC_SAFE_DELETE(ret);
         return nullptr;
     }
-
-    bool ccTouchBegan(CCTouch*, CCEvent*) override {
-        // Consume touches outside the buttons.
-        return true;
-    }
 };
 
 // ----------------------------------------------
@@ -356,26 +417,19 @@ void openNeoHub(CCNode* originalMenu) {
     if (!scene || !originalMenu)
         return;
 
-    // Prevent duplicate instances.
     if (scene->getChildByID("neo-hub"))
         return;
 
     auto hub = NeoHubLayer::create(originalMenu);
-
     if (!hub)
         return;
 
     hub->setID("neo-hub");
 
-    // Hide original menu.
     originalMenu->setVisible(false);
 
     scene->addChild(
         hub,
         scene->getHighestChildZ() + 100
     );
-
-    log::info("[NeoHub] Opened successfully.");
-}
-
 }
