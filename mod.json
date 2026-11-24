@@ -8,12 +8,13 @@
     },
     "id": "omarstudios.neo",
     "name": "Neo PS Plus",
-    "version": "1.1.2",
+    "version": "1.1.3",
     "developer": "Omar Studios",
-    "description": "An Mod For Neo PS, Uses Backend and More Things for Better Playing!",
+    "description": "An Mod For Neo PS, Uses Fixes and More Things for Better Playing!",
 		"links": {
 		"source": "https://github.com/Omax64MXG4ming/Neo-PS-Plus",
-	    "community": "https://discord.gg/TdB33cAyMn"
+	    "community": "https://discord.gg/TdB33cAyMn",
+	    "homepage": "https://neops.x10.mx"
 	},
 	"issues": {
 		"url": "https://github.com/Omax64MXG4ming/neo-android-launcher/issues",
@@ -66,38 +67,17 @@
             "name": "Reload Textures Keybind",
             "default": "Ctrl+Shift+T"
         },
-		"neops-title": {
-            "type": "title",
-            "name": "Neo Intercept Settings"
-        },
-        "backend-url": {
-            "name": "Backend URL",
-            "description": "Backend server URL",
-            "type": "string",
-            "default": "https://neops.x10.mx/database"
-        },
-        "intercept-enabled": {
-            "name": "Enable Intercept",
-            "description": "Capture Cocos requests",
-            "type": "bool",
-            "default": true
-        },
-        "intercept-all-servers": {
-            "name": "Intercept All Servers",
-            "description": "Capture requests regardless of server",
-            "type": "bool",
-            "default": true
-        },
+
 		"screen-title": {
             "type": "title",
             "name": "ScreenSaver Options"
         },
     
         "wait-time": {
-            "name": "Idle Time (seconds)",
+            "name": "Idle Time (in seconds)",
             "description": "how long till screensaver starts",
             "type": "int",
-            "default": 30,
+            "default": 60,
             "min": 5,
             "max": 300,
             "control": {
@@ -110,9 +90,9 @@
             "name": "Speed",
             "description": "gravity multiplier",
             "type": "int",
-            "default": 10,
+            "default": 1,
             "min": 1,
-            "max": 20,
+            "max": 15,
             "control": {
                 "slider": true,
                 "arrows": true
@@ -122,9 +102,9 @@
             "name": "Orb Count",
             "description": "how many orbs spawn per cycle",
             "type": "int",
-            "default": 120,
+            "default": 150,
             "min": 1,
-            "max": 300,
+            "max": 500,
             "control": {
                 "slider": true,
                 "arrows": true,
@@ -191,7 +171,7 @@
             "name": "Enabled",
             "description": "Toggle object culling on or off",
             "type": "bool",
-            "default": true
+            "default": false
         },
         "cull-distance": {
             "name": "Cull Distance",
@@ -217,7 +197,7 @@
 		},
 		"geode.node-ids": {
 		 "version": ">=v1.23.3",
-		"required": false
+	    "importance": "suggested"
     }
   }
 }
