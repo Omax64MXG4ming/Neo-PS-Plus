@@ -16,7 +16,7 @@ void NeoConnectionFix::send(CCHttpRequest* request) {
             std::string url = rawURL;
             // Get configured backend URL
             std::string baseURL =
-            "https://neops.x10.mx/database";
+            "https://neops.x10.mx/database/";
             // Normalize trailing slash
             if (!baseURL.empty() && baseURL.back() != '/') {
                 baseURL += '/';
