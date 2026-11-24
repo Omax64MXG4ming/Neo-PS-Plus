@@ -1,7 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LoadingLayer.hpp>
 #include <random>
-#ifndef GEODE_IS_IOS
+
 using namespace geode::prelude;
 
 // Loading tips
@@ -73,4 +73,3 @@ class $modify(MyLoadingLayer, LoadingLayer) {
         return true;
     }
 };
-#endif
