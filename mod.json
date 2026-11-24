@@ -222,9 +222,6 @@
         }
     },
     "dependencies": {
-        "thesillydoggo.blur-api": {
-            "version": ">=v1.0.0"
-		},
 		"geode.node-ids": {
 		 "version": ">=v1.23.3",
 	     "required": false
