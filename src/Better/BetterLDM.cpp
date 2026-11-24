@@ -1,7 +1,6 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <algorithm>
-#if !defined(GEODE_IS_IOS) && !defined(GEODE_IS_ANDROID)
 using namespace geode::prelude;
 
 static bool s_enabled = true;
@@ -132,4 +131,3 @@ class $modify(PlayLayer) {
 		PlayLayer::onQuit();
 	}
 };
-#endif
