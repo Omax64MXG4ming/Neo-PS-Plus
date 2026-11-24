@@ -9,62 +9,6 @@
 
 using namespace geode::prelude;
 
-#include <Geode/modify/CCKeyboardDispatcher.hpp>
-
-// Neo Buttons
-class $modify(NeoCustomMenuButton, MenuLayer) {
-
-  bool init() {
-        if (!MenuLayer::init())
-           return false;
-
-       auto winSize = CCDirector::get()->getWinSize();
-
-        // Button menu
-        auto menu = CCMenu::create();
-
-        if (!menu)
-            return true;
-
-        menu->setID("neo-custom-menu-button-menu");
-        menu->setPosition(CCPointZero);
-
-        this->addChild(menu, 1000);
-
-         Button sprite
-       auto sprite = ButtonSprite::create(
-          "Extra"
-          "goldFont.fnt",
-          "GJ_button_03.png",
-          0.5f
-        );
-
-        if (!sprite)
-            return true;
-
-        auto button = CCMenuItemSpriteExtra::create(
-           sprite,
-           this,
-           menu_selector(NeoCustomMenuButton::onOpenNeoMenu)
-        );
-
-        if (!button)
-            return true;
-    button->setPosition(
-    ccp(
-        winSize.width / 2.f,
-        winSize.height / 2.f - 95.f
-   ));
-        menu->addChild(button);
-
-        return true;
-    }
-
-    void onOpenNeoMenu(CCObject*) {
-        neo::ui::openCustomMenu();
-    }
-};
-
 // --------------------------------------------------
 // MENU LAYER
 // --------------------------------------------------
@@ -180,6 +124,55 @@ if (!menu) {
         
         return true;
     }
+// Neo Buttons
+class $modify(NeoCustomMenuButton, MenuLayer) {
+
+  bool init() {
+        if (!MenuLayer::init())
+           return false;
+
+       auto winSize = CCDirector::get()->getWinSize();
+
+        // Button menu
+        auto menu = CCMenu::create();
+
+        if (!menu)
+            return true;
+
+        menu->setID("neo-custom-menu-button-menu");
+        menu->setPosition(CCPointZero);
+
+        this->addChild(menu, 1000);
+
+         Button sprite
+       auto sprite = ButtonSprite::create(
+          "Extra"
+          "goldFont.fnt",
+          "GJ_button_03.png",
+          0.5f
+        );
+
+        if (!sprite)
+            return true;
+
+        auto button = CCMenuItemSpriteExtra::create(
+           sprite,
+           this,
+           menu_selector(NeoCustomMenuButton::onOpenNeoMenu)
+        );
+
+        if (!button)
+            return true;
+    button->setPosition(
+    ccp(
+        winSize.width / 2.f,
+        winSize.height / 2.f - 95.f
+   ));
+        menu->addChild(button);
+
+        return true;
+    }
+ }
 
     // ----------------------------------------------
     // BUTTON CALLBACKS
