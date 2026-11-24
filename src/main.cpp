@@ -2,12 +2,9 @@
 #include <Geode/modify/MenuLayer.hpp>
 #include <Geode/loader/SettingV3.hpp>
 
-#include "ui/NeoBackendLayer.hpp"
 #include "ui/RestartButtons.hpp"
 #include "BetterIncludes.hpp"
 #include "updater/NeoUpdater.hpp"
-#include "ui/NeoCustomMenu.hpp"
-#include "ui/NeoHub/NeoHubLayer.hpp"
 #ifndef GEODE_IS_IOS
 
 using namespace geode::prelude;
@@ -181,94 +178,6 @@ if (!menu) {
 
         menu->setScale(static_cast<float>(scale));
         menu->updateLayout();
-
-        // ------------------------------------------
-        // NEO INSPECTOR BUTTON
-        // ------------------------------------------
-
-        if (!this->getChildByID("neo-inspector-menu")) {
-
-            auto inspectorSprite = ButtonSprite::create(
-                "Interceptor",
-                "goldFont.fnt",
-                "GJ_button_01.png",
-                0.65f
-            );
-
-            if (inspectorSprite) {
-
-                auto inspectorButton = CCMenuItemSpriteExtra::create(
-                    inspectorSprite,
-                    this,
-                    menu_selector(AltMenuLayer::onNeoInspector)
-                );
-
-                if (inspectorButton) {
-
-                    auto inspectorMenu = CCMenu::create(
-                        inspectorButton,
-                        nullptr
-                    );
-
-                    if (inspectorMenu) {
-                        inspectorMenu->setID("neo-inspector-menu");
-
-                        inspectorMenu->setPosition(
-                            ccp(
-                                winSize.width - 65.0f,
-                                winSize.height - 35.0f
-                            )
-                        );
-
-                        this->addChild(inspectorMenu, 100);
-                    }
-                }
-            }
-        }
-
-        // ------------------------------------------
-        // NEO HUB BUTTON
-        // ------------------------------------------
-
-     //  if (!this->getChildByID("neo-hub-menu")) {
-
-      //      auto hubSprite = ButtonSprite::create(
-      //          "Neo------++++HUB",
-         //       "goldFont.fnt",
-          //      "GJ_button_01.png",
-        //        0.65f
-      //      );
-
-        //  if (hubSprite) {
-
-            //    auto hubButton = CCMenuItemSpriteExtra::create(
-                 //   hubSprite,
-                 //   this,
-         //           menu_selector(AltMenuLayer::onOpenNeoHub)
-      //          );
-
-            //    if (hubButton) {
-
-                 //   auto hubMenu = CCMenu::create();
-
-                //    if (hubMenu) {
-                 //       hubMenu->setID("neo-hub-menu");
-                    //    hubMenu->setPosition(CCPointZero);
-
-                     //   hubButton->setPosition(
-                         //   ccp(
-                           //     winSize.width - 65.f,
-                        //        winSize.height - 80.f
-                   //         )
-                     //   );
-
-                      //  hubMenu->addChild(hubButton);
-
-                     //   this->addChild(hubMenu, 100);
-                    //}
-              //  }
-        //    }
-      //  }
         
         return true;
     }
@@ -285,17 +194,7 @@ if (!menu) {
         neo::ui::RestartButtons::reload();
     }
 
-   // void onOpenNeoHub(CCObject*) {
-    //    log::info("[NeoHub] Opening Neo Hub");
-
-     //   neo::ui::openNeoHub(this);
-//    }
-
-    void onNeoInspector(CCObject*) {
-        log::info("[NeoInspector] Opening Inspector");
-        NeoBackendLayer::open(this);
-    }
-};
+    };
 
 // --------------------------------------------------
 // GAME LOADED
