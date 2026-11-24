@@ -3,21 +3,20 @@
 #include <Geode/loader/SettingV3.hpp>
 
 #include "ui/RestartButtons.hpp"
+#include "ui/NeoHub/NeoHubLayer.hpp"
 #include "BetterIncludes.hpp"
 #include "updater/NeoUpdater.hpp"
+
 #ifndef GEODE_IS_IOS
 
 using namespace geode::prelude;
-
 // --------------------------------------------------
 // MENU LAYER
 // --------------------------------------------------
 class $modify(AltMenuLayer, MenuLayer) {
-
     // ----------------------------------------------
     // SCENE
     // ----------------------------------------------
-
     static CCScene* scene(bool p0) {
         if (!neo::ui::RestartButtons::consumeReloadFlag()) {
             return MenuLayer::scene(p0);
@@ -25,35 +24,33 @@ class $modify(AltMenuLayer, MenuLayer) {
 
         return MenuLayer::scene(false);
     }
-
     // ----------------------------------------------
     // INIT
     // ----------------------------------------------
-
     bool init() {
-        if (!MenuLayer::init()) {
+        if (!MenuLayer::init())
             return false;
-        }
 
         auto winSize = CCDirector::get()->getWinSize();
-
         // ------------------------------------------
-        // BUTTON CONTAINER
+        // CLOSE / RESTART / RELOAD MENU
         // ------------------------------------------
+        auto menu = typeinfo_cast<CCMenu*>(
+            this->getChildByID("close-menu")
+        );
 
-auto menu = typeinfo_cast<CCMenu*>(
-    this->getChildByID("close-menu")
-);
+        if (!menu) {
+            menu = CCMenu::create();
 
-if (!menu) {
-    menu = CCMenu::create();
+            if (!menu)
+                return false;
 
-    menu->setID("close-menu");
-    menu->setContentSize({33.25f, 200.f});
-    menu->ignoreAnchorPointForPosition(false);
+            menu->setID("close-menu");
+            menu->setContentSize({33.25f, 200.f});
+            menu->ignoreAnchorPointForPosition(false);
 
-    this->addChild(menu);
-}
+            this->addChild(menu);
+        }
 
         menu->setAnchorPoint({0.f, 1.f});
 
@@ -69,11 +66,9 @@ if (!menu) {
             ->setCrossAxisOverflow(false);
 
         menu->setLayout(layout);
-
         // ------------------------------------------
         // EXIT BUTTON
         // ------------------------------------------
-
         if (Mod::get()->getSettingValue<bool>("exit")) {
 
             if (!menu->getChildByID("close-button")) {
@@ -100,110 +95,91 @@ if (!menu) {
         } else {
             menu->removeChildByID("close-button");
         }
-
         // ------------------------------------------
         // RESTART / RELOAD BUTTONS
         // ------------------------------------------
-
         neo::ui::RestartButtons::setup(
             menu,
             this,
             menu_selector(AltMenuLayer::onRestart),
             menu_selector(AltMenuLayer::onReload)
         );
-
         // ------------------------------------------
         // SIZE
         // ------------------------------------------
-
         const auto scale =
             Mod::get()->getSettingValue<double>("size");
 
         menu->setScale(static_cast<float>(scale));
         menu->updateLayout();
-        
-        return true;
-    }
-// Neo Buttons
-class $modify(NeoCustomMenuButton, MenuLayer) {
+        // ------------------------------------------
+        // NEO EXTRA BUTTON
+        // ------------------------------------------
+        if (!this->getChildByID("neo-extra-menu")) {
 
-  bool init() {
-        if (!MenuLayer::init())
-           return false;
+            auto extraMenu = CCMenu::create();
 
-       auto winSize = CCDirector::get()->getWinSize();
+            if (extraMenu) {
+                extraMenu->setID("neo-extra-menu");
+                extraMenu->setPosition(CCPointZero);
 
-        // Button menu
-        auto menu = CCMenu::create();
+                auto sprite = ButtonSprite::create(
+                    "Extra",
+                    "goldFont.fnt",
+                    "GJ_button_03.png",
+                    0.5f
+                );
 
-        if (!menu)
-            return true;
+                if (sprite) {
+                    auto button = CCMenuItemSpriteExtra::create(
+                        sprite,
+                        this,
+                        menu_selector(AltMenuLayer::onOpenNeoHub)
+                    );
 
-        menu->setID("neo-custom-menu-button-menu");
-        menu->setPosition(CCPointZero);
+                    if (button) {
+                        button->setPosition(ccp(
+                            winSize.width / 2.f,
+                            winSize.height / 2.f - 95.f
+                        ));
 
-        this->addChild(menu, 1000);
+                        extraMenu->addChild(button);
+                    }
+                }
 
-         Button sprite
-       auto sprite = ButtonSprite::create(
-          "Extra"
-          "goldFont.fnt",
-          "GJ_button_03.png",
-          0.5f
-        );
-
-        if (!sprite)
-            return true;
-
-        auto button = CCMenuItemSpriteExtra::create(
-           sprite,
-           this,
-           menu_selector(NeoCustomMenuButton::onOpenNeoMenu)
-        );
-
-        if (!button)
-            return true;
-    button->setPosition(
-    ccp(
-        winSize.width / 2.f,
-        winSize.height / 2.f - 95.f
-   ));
-        menu->addChild(button);
+                this->addChild(extraMenu, 1000);
+            }
+        }
 
         return true;
     }
-
     // ----------------------------------------------
-    // BUTTON CALLBACKS
+    // RESTART
     // ----------------------------------------------
-
     void onRestart(CCObject*) {
         neo::ui::RestartButtons::restart();
     }
-
+    // ----------------------------------------------
+    // RELOAD
+    // ----------------------------------------------
     void onReload(CCObject*) {
         neo::ui::RestartButtons::reload();
     }
-
+    // ----------------------------------------------
+    // OPEN NEO HUB
+    // ----------------------------------------------
     void onOpenNeoHub(CCObject*) {
         neo::ui::openNeoHub(this);
     }
-
-    };
-
+};
 // --------------------------------------------------
 // GAME LOADED
 // --------------------------------------------------
 $on_game(Loaded) {
-    // ----------------------------------------------
-    // NEO PS PLUS UPDATER
-    // ----------------------------------------------
-neo::updater::NeoUpdater::checkForUpdates();
-    // ----------------------------------------------
-    // RESTART / RELOAD KEYBINDS
-    // ----------------------------------------------
+    // Neo PS Plus Updater
+    neo::updater::NeoUpdater::checkForUpdates();
 
+    // Restart / Reload keybinds
     neo::ui::RestartButtons::registerKeybinds();
 }
-
 #endif
