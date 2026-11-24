@@ -12,59 +12,58 @@ using namespace geode::prelude;
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 
 // Neo Buttons
-//class $modify(NeoCustomMenuButton, MenuLayer) {
+class $modify(NeoCustomMenuButton, MenuLayer) {
 
-//    bool init() {
-  //      if (!MenuLayer::init())
-      //      return false;
+  bool init() {
+        if (!MenuLayer::init())
+           return false;
 
-   //     auto winSize = CCDirector::get()->getWinSize();
+       auto winSize = CCDirector::get()->getWinSize();
 
         // Button menu
-//        auto menu = CCMenu::create();
+        auto menu = CCMenu::create();
 
-      //  if (!menu)
-     //       return true;
+        if (!menu)
+            return true;
 
-     //   menu->setID("neo-custom-menu-button-menu");
-       // menu->setPosition(CCPointZero);
+        menu->setID("neo-custom-menu-button-menu");
+        menu->setPosition(CCPointZero);
 
-     //   this->addChild(menu, 1000);
+        this->addChild(menu, 1000);
 
-        // Button sprite
-//        auto sprite = ButtonSprite::create(
-        //    "Credits",
-      //      "goldFont.fnt",
-       //     "GJ_button_03.png",
-     //       0.7f
- //       );
+         Button sprite
+       auto sprite = ButtonSprite::create(
+          "Extra"
+          "goldFont.fnt",
+          "GJ_button_03.png",
+          0.5f
+        );
 
-      //  if (!sprite)
-     //       return true;
+        if (!sprite)
+            return true;
 
-     //   auto button = CCMenuItemSpriteExtra::create(
- //           sprite,
-  //          this,
-    //        menu_selector(NeoCustomMenuButton::onOpenNeoMenu)
-    //    );
+        auto button = CCMenuItemSpriteExtra::create(
+           sprite,
+           this,
+           menu_selector(NeoCustomMenuButton::onOpenNeoMenu)
+        );
 
-        //if (!button)
-         //   return true;
+        if (!button)
+            return true;
+    button->setPosition(
+    ccp(
+        winSize.width / 2.f,
+        winSize.height / 2.f - 95.f
+   ));
+        menu->addChild(button);
 
-//        button->setPosition({
-//            winSize.width - 42.f,
-//            winSize.height - 45.f
-//        });
+        return true;
+    }
 
-//        menu->addChild(button);
-
-//        return true;
-//    }
-
-//    void onOpenNeoMenu(CCObject*) {
-//        neo::ui::openCustomMenu();
-//    }
-//};
+    void onOpenNeoMenu(CCObject*) {
+        neo::ui::openCustomMenu();
+    }
+};
 
 // --------------------------------------------------
 // MENU LAYER
@@ -192,6 +191,10 @@ if (!menu) {
 
     void onReload(CCObject*) {
         neo::ui::RestartButtons::reload();
+    }
+
+    void onOpenNeoHub(CCObject*) {
+        neo::ui::openNeoHub(this);
     }
 
     };
