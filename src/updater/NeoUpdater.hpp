@@ -8,7 +8,7 @@ namespace neo::updater {
 class NeoUpdater {
 public:
     // Comprueba si hay una nueva versión en GitHub.
-    static void checkForUpdates(bool force = false);
+    static void checkForUpdates(bool force = true);
 
 private:
     // Muestra la alerta de actualización.
