@@ -19,6 +19,55 @@ protected:
     int m_currentPage = 0;
 
     // ------------------------------------------
+    // LOAD SPRITE ATLAS
+    // ------------------------------------------
+
+    bool loadAtlas() {
+        auto fileUtils = CCFileUtils::sharedFileUtils();
+
+        if (!fileUtils)
+            return false;
+
+        float scale = CCDirector::get()->getContentScaleFactor();
+
+        const char* candidates[3];
+
+        // UHD device
+        if (scale >= 3.0f) {
+            candidates[0] = "neo-hub-uhd.plist";
+            candidates[1] = "neo-hub-hd.plist";
+            candidates[2] = "neo-hub.plist";
+        }
+
+        // HD device
+        else if (scale >= 1.5f) {
+            candidates[0] = "neo-hub-hd.plist";
+            candidates[1] = "neo-hub-uhd.plist";
+            candidates[2] = "neo-hub.plist";
+        }
+
+        // Standard device
+        else {
+            candidates[0] = "neo-hub.plist";
+            candidates[1] = "neo-hub-hd.plist";
+            candidates[2] = "neo-hub-uhd.plist";
+        }
+
+        for (const char* plist : candidates) {
+            if (!fileUtils->isFileExist(plist))
+                continue;
+
+            CCSpriteFrameCache::get()->addSpriteFramesWithFile(plist);
+
+            log::info("[NeoHub] Loaded atlas: {}", plist);
+            return true;
+        }
+
+        log::error("[NeoHub] No Neo Hub atlas was found!");
+        return false;
+    }
+
+    // ------------------------------------------
     // INITIALIZATION
     // ------------------------------------------
 
@@ -34,7 +83,15 @@ protected:
         this->setPosition(CCPointZero);
         this->setKeypadEnabled(true);
 
+        // Load atlas before creating buttons
+        loadAtlas();
+
+        // --------------------------------------
+        // RESPONSIVE CONTAINER
+        // --------------------------------------
+
         auto container = CCNode::create();
+
         if (!container)
             return false;
 
@@ -46,7 +103,7 @@ protected:
         float scale = std::min({
             1.f,
             winSize.width / 440.f,
-            winSize.height / 300.f
+            winSize.height / 380.f
         });
 
         container->setScale(scale);
@@ -57,11 +114,13 @@ protected:
         // --------------------------------------
 
         auto panel = CCScale9Sprite::create("GJ_square01.png");
+
         if (!panel)
             return false;
 
-        panel->setContentSize({420.f, 270.f});
+        panel->setContentSize({420.f, 350.f});
         panel->setPosition(CCPointZero);
+
         container->addChild(panel);
 
         // --------------------------------------
@@ -74,19 +133,20 @@ protected:
         );
 
         if (header) {
-            header->setPosition(ccp(0.f, 108.f));
+            header->setPosition(ccp(0.f, 145.f));
             container->addChild(header);
         }
 
         auto subtitle = CCLabelBMFont::create(
-            "Neo PS Plus - Extra Pag",
+            "Neo PS Plus - Extra Page",
             "bigFont.fnt"
         );
 
         if (subtitle) {
-            subtitle->setPosition(ccp(0.f, 80.f));
+            subtitle->setPosition(ccp(0.f, 118.f));
             subtitle->setScale(0.4f);
             subtitle->setColor({180, 210, 255});
+
             container->addChild(subtitle);
         }
 
@@ -95,25 +155,27 @@ protected:
         // --------------------------------------
 
         m_pageTitle = CCLabelBMFont::create(
-            "Welcome to PS Neo Hub",
+            "Welcome to Neo PS Hub",
             "goldFont.fnt"
         );
 
         if (m_pageTitle) {
-            m_pageTitle->setPosition(ccp(0.f, 43.f));
+            m_pageTitle->setPosition(ccp(0.f, 80.f));
             m_pageTitle->setScale(0.65f);
+
             container->addChild(m_pageTitle);
         }
 
         m_pageDescription = CCLabelBMFont::create(
-            "Your custom Geometry Dash experience.",
+            "Explore the Neo PS Plus experience.",
             "bigFont.fnt"
         );
 
         if (m_pageDescription) {
-            m_pageDescription->setPosition(ccp(0.f, 18.f));
+            m_pageDescription->setPosition(ccp(0.f, 55.f));
             m_pageDescription->setScale(0.38f);
             m_pageDescription->setColor({200, 220, 255});
+
             container->addChild(m_pageDescription);
         }
 
@@ -122,6 +184,7 @@ protected:
         // --------------------------------------
 
         m_menu = CCMenu::create();
+
         if (!m_menu)
             return false;
 
@@ -134,7 +197,81 @@ protected:
     }
 
     // ------------------------------------------
-    // BUTTON FACTORY
+    // ICON BUTTON FACTORY
+    // ------------------------------------------
+
+    CCMenuItemSpriteExtra* createIconButton(
+        const char* frame,
+        const char* label,
+        float scale,
+        SEL_MenuHandler callback
+    ) {
+        auto icon = CCSprite::createWithSpriteFrameName(frame);
+
+        if (!icon) {
+            log::warn("[NeoHub] Missing sprite: {}", frame);
+            return nullptr;
+        }
+
+        icon->setScale(scale);
+
+        auto button = CCMenuItemSpriteExtra::create(
+            icon,
+            this,
+            callback
+        );
+
+        if (!button)
+            return nullptr;
+
+        auto text = CCLabelBMFont::create(
+            label,
+            "bigFont.fnt"
+        );
+
+        if (text) {
+            text->setScale(0.38f);
+
+            text->setPosition(ccp(
+                0.f,
+                -(icon->getContentSize().height * scale / 2.f) - 12.f
+            ));
+
+            text->setColor({220, 230, 255});
+
+            button->addChild(text);
+        }
+
+        return button;
+    }
+
+    // ------------------------------------------
+    // ADD ICON BUTTON
+    // ------------------------------------------
+
+    void addIconButton(
+        const char* frame,
+        const char* label,
+        float x,
+        float y,
+        SEL_MenuHandler callback
+    ) {
+        auto button = createIconButton(
+            frame,
+            label,
+            0.30f,
+            callback
+        );
+
+        if (!button)
+            return;
+
+        button->setPosition(ccp(x, y));
+        m_menu->addChild(button);
+    }
+
+    // ------------------------------------------
+    // NORMAL BUTTON FACTORY
     // ------------------------------------------
 
     CCMenuItemSpriteExtra* createButton(
@@ -165,6 +302,7 @@ protected:
         SEL_MenuHandler callback
     ) {
         auto button = createButton(text, callback);
+
         if (!button)
             return;
 
@@ -188,13 +326,17 @@ protected:
     }
 
     // ------------------------------------------
-    // PAGE NAVIGATION
+    // CLEAR BUTTONS
     // ------------------------------------------
 
     void clearButtons() {
         if (m_menu)
             m_menu->removeAllChildrenWithCleanup(true);
     }
+
+    // ------------------------------------------
+    // PAGE NAVIGATION
+    // ------------------------------------------
 
     void showPage(int page) {
         if (!m_menu)
@@ -210,36 +352,40 @@ protected:
         if (page == 0) {
             setPage(
                 "Welcome to Neo PS Hub",
-                "Explore the Neo PS Plus experience. (._.)"
+                "Explore the Neo PS Plus experience."
             );
 
-            addButton(
+            addIconButton(
+                "community.png",
                 "COMMUNITY",
-                -105.f, -42.f,
+                -105.f, -15.f,
                 menu_selector(NeoHubLayer::onCommunity)
             );
 
-            addButton(
+            addIconButton(
+                "credits.png",
                 "CREDITS",
-                105.f, -42.f,
+                105.f, -15.f,
                 menu_selector(NeoHubLayer::onCredits)
             );
 
-            addButton(
+            addIconButton(
+                "dashboard.png",
                 "DASHBOARD",
-                -105.f, -88.f,
+                -105.f, -90.f,
                 menu_selector(NeoHubLayer::onDashboard)
             );
 
-            addButton(
+            addIconButton(
+                "changelog.png",
                 "CHANGELOG",
-                105.f, -88.f,
+                105.f, -90.f,
                 menu_selector(NeoHubLayer::onChangelog)
             );
 
             addButton(
                 "NEXT >",
-                0.f, -122.f,
+                0.f, -150.f,
                 menu_selector(NeoHubLayer::onNext)
             );
         }
@@ -254,67 +400,32 @@ protected:
                 "Discover more options and information."
             );
 
-
             addButton(
                 "< PREVIOUS",
-                105.f, -94.f,
+                -90.f, -100.f,
                 menu_selector(NeoHubLayer::onPrevious)
             );
 
             addButton(
                 "BACK TO GAME",
-                0.f, -122.f,
+                90.f, -100.f,
                 menu_selector(NeoHubLayer::onBack)
             );
         }
 
         // --------------------------------------
-        // INFORMATION PAGES
+        // CREDITS
         // --------------------------------------
 
         else if (page == 2) {
             setPage(
                 "Neo PS Credits",
-                "Created with contributions from the Neo PS team and Better Utils Codes"
+                "Created by the Neo PS team and Better Utils Codes."
             );
 
             addButton(
                 "BACK",
-                0.f, -100.f,
-                menu_selector(NeoHubLayer::onReturnHome)
-            );
-        }
-
-        else if (page == 3) {
-            setPage(
-                "Neo PS Changelog",
-                "Latest mod changes."
-            );
-
-            addButton(
-                "BACK",
-                0.f, -100.f,
-                menu_selector(NeoHubLayer::onReturnHome)
-            );
-        }
-
-            addButton(
-                "BACK",
-                0.f, -100.f,
-                menu_selector(NeoHubLayer::onReturnHome)
-            );
-        }
-            addButton(
-                "BACK",
-                0.f, -100.f,
-                menu_selector(NeoHubLayer::onReturnHome)
-            );
-        }
-}
-
-            addButton(
-                "BACK",
-                0.f, -100.f,
+                0.f, -110.f,
                 menu_selector(NeoHubLayer::onReturnHome)
             );
         }
@@ -325,6 +436,8 @@ protected:
     // ------------------------------------------
 
     void onCommunity(CCObject*) {
+        log::info("[NeoHub] Opening Community");
+
         utils::web::openLinkInBrowser(
             "https://discord.gg/TdB33cAyMn"
         );
@@ -335,6 +448,7 @@ protected:
     // ------------------------------------------
 
     void onDashboard(CCObject*) {
+        log::info("[NeoHub] Opening Dashboard");
 
         utils::web::openLinkInBrowser(
             "https://neops.x10.mx/dashboard"
@@ -354,10 +468,13 @@ protected:
     // ------------------------------------------
 
     void onChangelog(CCObject*) {
+        log::info("[NeoHub] Opening Changelog");
+
         utils::web::openLinkInBrowser(
             "https://github.com/Omax64MXG4ming/Neo-PS-Plus/releases"
         );
     }
+
     // ------------------------------------------
     // NEXT / PREVIOUS
     // ------------------------------------------
@@ -421,6 +538,7 @@ void openNeoHub(CCNode* originalMenu) {
         return;
 
     auto hub = NeoHubLayer::create(originalMenu);
+
     if (!hub)
         return;
 
@@ -432,4 +550,8 @@ void openNeoHub(CCNode* originalMenu) {
         hub,
         scene->getHighestChildZ() + 100
     );
+
+    log::info("[NeoHub] Opened successfully.");
+}
+
 }
