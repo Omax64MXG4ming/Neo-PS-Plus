@@ -163,6 +163,32 @@
             "type": "bool",
             "default": false
         },
+
+"blur-title": {
+            "type": "title",
+            "name": "BlurAPI Options"
+        },
+		
+	"enabled": {
+			"type": "bool",
+			"name": "Enabled",
+			"description": "Enables blur rendering",
+			"default": true
+		},
+		"passes": {
+			"type": "int",
+			"name": "Blur Passes",
+			"description": "The quality of the shader",
+			"min": 3,
+			"max": 10,
+			"default": {
+				"win": 5,
+				"mac": 5,
+				"android": 5,
+				"ios": 5
+			}
+		},
+	
 "ldm-title": {
             "type": "title",
             "name": "Ultimate LDM Settings"
