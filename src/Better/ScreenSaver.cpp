@@ -8,7 +8,7 @@
 #if !defined(GEODE_IS_IOS)
 #include <Geode/modify/CCKeyboardDispatcher.hpp>
 #endif
-#include "../include/BlurAPI.hpp"
+#include "../BlurAPI.hpp"
 #include <box2d/box2d.h>
 
 using namespace geode::prelude;
