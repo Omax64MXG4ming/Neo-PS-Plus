@@ -196,7 +196,7 @@
 		},
 		"geode.node-ids": {
 		 "version": ">=v1.23.3",
-	    "importance": "suggested"
+	     "required": false
     }
   }
 }
