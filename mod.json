@@ -20,6 +20,11 @@
 		"url": "https://github.com/Omax64MXG4ming/neo-android-launcher/issues",
 		"info": "If you see or detect an error or bug within the launcher or while playing, please report it to the GitHub issues page."
 	},
+		"resources": {
+		"files": [
+			"resources/shaders/*.glsl"
+		]
+	},
     "settings": {
 		"restart-title": {
             "type": "title",
