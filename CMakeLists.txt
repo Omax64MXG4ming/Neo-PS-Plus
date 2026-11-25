@@ -74,13 +74,6 @@ FetchContent_MakeAvailable(box2d)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/Hooks/*.cpp)
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
-
-# --------------------------------------------------
-# Mod binary
-# --------------------------------------------------
-
-add_library(${PROJECT_NAME} SHARED ${SOURCES})
-
 # --------------------------------------------------
 # Include directories
 # --------------------------------------------------
