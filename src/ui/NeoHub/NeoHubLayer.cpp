@@ -30,27 +30,21 @@ protected:
 
         float scale = CCDirector::get()->getContentScaleFactor();
 
-        const char* candidates[3];
+        const char* candidates[1];
 
         // UHD device
         if (scale >= 3.0f) {
             candidates[0] = "neo-hub-uhd.plist";
-            candidates[1] = "neo-hub-hd.plist";
-            candidates[2] = "neo-hub.plist";
         }
 
         // HD device
         else if (scale >= 1.5f) {
             candidates[0] = "neo-hub-hd.plist";
-            candidates[1] = "neo-hub-uhd.plist";
-            candidates[2] = "neo-hub.plist";
         }
 
         // Standard device
         else {
             candidates[0] = "neo-hub.plist";
-            candidates[1] = "neo-hub-hd.plist";
-            candidates[2] = "neo-hub-uhd.plist";
         }
 
         for (const char* plist : candidates) {
