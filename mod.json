@@ -192,7 +192,7 @@
 				"android": 5,
 				"ios": 5
 			}
-		},
+		}
     },
     "dependencies": {
 		"geode.node-ids": {
