@@ -9,9 +9,10 @@ struct Shader {
     GLuint program = 0;
 
     Result<std::string> compile(
-const std::filesystem::path& vertexPath,
-const std::filesystem::path& fragmentPath
-);
+        asp::fs::PathView vertexPath,
+        asp::fs::PathView fragmentPath
+    );
+
     Result<std::string> link();
     void cleanup();
 };
