@@ -13,5 +13,5 @@ void cleanupPostProcess();
 namespace Blur
 {
     void drawBlurredNode(CCNode* node, BlurAPI::BlurOptions* options);
-    std::string getShaderPath(bool vertexShader);
+    asp::fs::PathView getShaderPath(bool vertexShader);
 };
