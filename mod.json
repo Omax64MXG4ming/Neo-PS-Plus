@@ -22,7 +22,8 @@
 	},
 		"resources": {
 		"files": [
-			"resources/shaders/*.glsl"
+			"resources/shaders/*.glsl",
+			"resources/neo-hub/*.png"
 		]
 	},
     "settings": {
