@@ -98,7 +98,7 @@ jobs:
         uses: geode-sdk/build-geode-mod@main
         with:
           target: ${{ matrix.config.target }}
-          sdk: nightly
+          sdk: latest
           build-config: Release
           android-ndk-version: 30.0.16248370
           use-cpm-cache: false
@@ -114,6 +114,8 @@ jobs:
       - name: Combine Geode Builds
         id: combine
         uses: geode-sdk/build-geode-mod/combine@main
+        with:
+          zstd: false
 
       - name: Upload Combined Artifact
         uses: actions/upload-artifact@v4
