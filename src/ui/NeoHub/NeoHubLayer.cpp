@@ -201,74 +201,50 @@ protected:
     // ------------------------------------------
 
     CCMenuItemSpriteExtra* createIconButton(
-        const char* frame,
-        const char* label,
-        float scale,
-        SEL_MenuHandler callback
-    ) {
-        auto icon = CCSprite::createWithSpriteFrameName(frame);
+    const char* frame,
+    float scale,
+    SEL_MenuHandler callback
+) {
+    auto icon = CCSprite::createWithSpriteFrameName(frame);
 
-        if (!icon) {
-            log::warn("[NeoHub] Missing sprite: {}", frame);
-            return nullptr;
-        }
-
-        icon->setScale(scale);
-
-        auto button = CCMenuItemSpriteExtra::create(
-            icon,
-            this,
-            callback
-        );
-
-        if (!button)
-            return nullptr;
-
-        auto text = CCLabelBMFont::create(
-            label,
-            "bigFont.fnt"
-        );
-
-        if (text) {
-            text->setScale(0.38f);
-
-            text->setPosition(ccp(
-                0.f,
-                -(icon->getContentSize().height * scale / 2.f) - 12.f
-            ));
-
-            text->setColor({220, 230, 255});
-
-            button->addChild(text);
-        }
-
-        return button;
+    if (!icon) {
+        log::warn("[NeoHub] Missing sprite: {}", frame);
+        return nullptr;
     }
+
+    icon->setScale(scale);
+
+    auto button = CCMenuItemSpriteExtra::create(
+        icon,
+        this,
+        callback
+    );
+
+    return button;
+}
 
     // ------------------------------------------
     // ADD ICON BUTTON
     // ------------------------------------------
 
     void addIconButton(
-        const char* frame,
-        const char* label,
-        float x,
-        float y,
-        SEL_MenuHandler callback
-    ) {
-        auto button = createIconButton(
-            frame,
-            label,
-            0.30f,
-            callback
-        );
+    const char* frame,
+    float x,
+    float y,
+    SEL_MenuHandler callback
+) {
+    auto button = createIconButton(
+        frame,
+        0.30f,
+        callback
+    );
 
-        if (!button)
-            return;
+    if (!button)
+        return;
 
-        button->setPosition(ccp(x, y));
-        m_menu->addChild(button);
-    }
+    button->setPosition(ccp(x, y));
+    m_menu->addChild(button);
+}
 
     // ------------------------------------------
     // NORMAL BUTTON FACTORY
@@ -349,46 +325,42 @@ protected:
         // PAGE 1
         // --------------------------------------
 
-        if (page == 0) {
-            setPage(
-                "Welcome to Neo PS Hub",
-                "Explore the Neo PS Plus experience."
-            );
+if (page == 0) {
+    setPage(
+        "Welcome to Neo PS Hub",
+        "Explore the Neo PS Plus experience."
+    );
 
-            addIconButton(
-                "community.png",
-                "COMMUNITY",
-                -105.f, -15.f,
-                menu_selector(NeoHubLayer::onCommunity)
-            );
+    addIconButton(
+        "community.png",
+        -105.f, -15.f,
+        menu_selector(NeoHubLayer::onCommunity)
+    );
 
-            addIconButton(
-                "credits.png",
-                "CREDITS",
-                105.f, -15.f,
-                menu_selector(NeoHubLayer::onCredits)
-            );
+    addIconButton(
+        "credits.png",
+        105.f, -15.f,
+        menu_selector(NeoHubLayer::onCredits)
+    );
 
-            addIconButton(
-                "dashboard.png",
-                "DASHBOARD",
-                -105.f, -90.f,
-                menu_selector(NeoHubLayer::onDashboard)
-            );
+    addIconButton(
+        "dashboard.png",
+        -105.f, -90.f,
+        menu_selector(NeoHubLayer::onDashboard)
+    );
 
-            addIconButton(
-                "changelog.png",
-                "CHANGELOG",
-                105.f, -90.f,
-                menu_selector(NeoHubLayer::onChangelog)
-            );
+    addIconButton(
+        "changelog.png",
+        105.f, -90.f,
+        menu_selector(NeoHubLayer::onChangelog)
+    );
 
-            addButton(
-                "NEXT >",
-                0.f, -150.f,
-                menu_selector(NeoHubLayer::onNext)
-            );
-        }
+    addButton(
+        "NEXT >",
+        0.f, -150.f,
+        menu_selector(NeoHubLayer::onNext)
+    );
+}
 
         // --------------------------------------
         // PAGE 2
