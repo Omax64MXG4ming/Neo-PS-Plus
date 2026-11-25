@@ -8,7 +8,10 @@ struct Shader {
     GLuint fragment = 0;
     GLuint program = 0;
 
-    Result<std::string> compile(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath);
+    Result<std::string> compile(
+const std::filesystem::path& vertexPath,
+const std::filesystem::path& fragmentPath
+);
     Result<std::string> link();
     void cleanup();
 };
@@ -17,7 +20,10 @@ struct RenderTexture {
     GLuint fbo = 0;
     GLuint tex = 0;
 
-    void setup(GLsizei width, GLsizei height);
+    void setup(
+GLsizei width,
+GLsizei height
+);
     void cleanup();
 };
 
@@ -31,15 +37,24 @@ GLint ppShaderFirst = 0;
 GLint ppShaderRadius = 0;
 GLint ppShaderPass = 0;
 
-Result<std::string> Shader::compile(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath) {
+Result<std::string> Shader::compile(
+    asp::fs::PathView vertexPath,
+    asp::fs::PathView fragmentPath
+) {
     auto vertexSource = file::readString(vertexPath);
     if (!vertexSource)
-        return Err("failed to read vertex shader at path {}: {}", vertexPath.string(), vertexSource.unwrapErr());
+        return Err("failed to read vertex shader at path {}: {}",
+            std::string(vertexPath),
+            vertexSource.unwrapErr()
+        );
 
     auto fragmentSource = file::readString(fragmentPath);
     if (!fragmentSource)
-        return Err("failed to read fragment shader at path {}: {}", fragmentPath.string(), fragmentSource.unwrapErr());
-
+        return Err("failed to read fragment shader at path {}: {}",
+            std::string(fragmentPath),
+            fragmentSource.unwrapErr()
+        );
+    
     auto getShaderLog = [](GLuint id) -> std::string {
         GLint length, written;
         glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
@@ -169,16 +184,16 @@ void RenderTexture::cleanup() {
     tex = 0;
 }
 
-std::string Blur::getShaderPath(bool vertexShader)
+asp::fs::PathView Blur::getShaderPath(bool vertexShader)
 {
-    std::string path = "";
+    std::string path = vertexShader
+        ? "kawase-vert.glsl"
+        : "kawase-frag.glsl";
 
-    if (vertexShader)
-        path = "kawase-vert.glsl";
-    else
-        path = "kawase-frag.glsl";
-
-    return CCFileUtils::get()->fullPathForFilename(fmt::format("{}{}", ""_spr, path).c_str(), false);
+    return CCFileUtils::get()->fullPathForFilename(
+        fmt::format("{}{}", ""_spr, path).c_str(),
+        false
+    );
 }
 
 void setupPostProcess()
