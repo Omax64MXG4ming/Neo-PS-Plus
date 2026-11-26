@@ -218,25 +218,6 @@ class $modify(CSWHook, CustomSongWidget) {
 		}
 	}
 
-class $modify(CSWHook, CustomSongWidget) {
-	void isNewgroundsDown(GJSongError type) {
-		if (type == GJSongError::FailedToFetch) {
-			async::spawn(
-				web::WebRequest()
-					.get("https://api.songfilehub.com/"),
-				[](web::WebResponse res) {
-					if (!res.ok()) {
-						ErrorPopup::createAndShow(
-							"Error",
-							fmt::format("The SongFileHub servers are <cr>down</c> or <co>unreachable</c>. Please try again later.\n<cl>(status code: {})</c>", res.code())
-						);
-					}
-				}
-			);
-		}
-	}
-};
-
 	void loadSongInfoFailed(int id, GJSongError errorType) {
 		CustomSongWidget::loadSongInfoFailed(id, errorType);
 		isNewgroundsDown(errorType);
