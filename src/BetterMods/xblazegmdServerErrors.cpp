@@ -9,7 +9,7 @@
 #include <string>
 
 #include <XblazeAPI.hpp>
-
+#ifndef GEODE_IS_IOS
 using namespace geode::prelude;
 
 /// A special popup that can only appear once at a time
@@ -253,3 +253,4 @@ class $modify(PPHook, ProfilePage) {
 		if (errorType == CommentError::Failed) areTheServersDown();
 	}
 };
+#endif
