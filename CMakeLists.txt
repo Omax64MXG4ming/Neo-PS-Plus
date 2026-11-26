@@ -68,6 +68,8 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(box2d)
 
+CPMAddPackage("gh:xblazegmd/xblaze-geode-api2#b7c7689")
+
 # --------------------------------------------------
 # Source files
 # --------------------------------------------------
@@ -89,6 +91,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME}
     box2d
+    xblaze-geode-api
 )
 # --------------------------------------------------
 # Configure Geode mod
