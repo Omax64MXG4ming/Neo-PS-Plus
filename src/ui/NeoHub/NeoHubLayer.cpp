@@ -21,46 +21,58 @@ protected:
     // ------------------------------------------
     // LOAD SPRITE ATLAS
     // ------------------------------------------
+bool loadAtlas() {
+    auto fileUtils = CCFileUtils::sharedFileUtils();
 
-    bool loadAtlas() {
-        auto fileUtils = CCFileUtils::sharedFileUtils();
-
-        if (!fileUtils)
-            return false;
-
-        float scale = CCDirector::get()->getContentScaleFactor();
-
-        const char* candidates[1];
-
-        // UHD device
-        if (scale >= 3.0f) {
-            candidates[0] = "neo-hub-uhd.plist";
-        }
-
-        // HD device
-        else if (scale >= 1.5f) {
-            candidates[0] = "neo-hub-hd.plist";
-        }
-
-        // Standard device
-        else {
-            candidates[0] = "neo-hub.plist";
-        }
-
-        for (const char* plist : candidates) {
-            if (!fileUtils->isFileExist(plist))
-                continue;
-
-            CCSpriteFrameCache::get()->addSpriteFramesWithFile(plist);
-
-            log::info("[NeoHub] Loaded atlas: {}", plist);
-            return true;
-        }
-
-        log::error("[NeoHub] No Neo Hub atlas was found!");
+    if (!fileUtils)
         return false;
+
+    float scale = CCDirector::get()->getContentScaleFactor();
+
+    const char* candidates[3];
+
+    if (scale >= 3.0f) {
+        candidates[0] = "neo-hub-uhd.plist";
+        candidates[1] = "neo-hub-hd.plist";
+        candidates[2] = "neo-hub.plist";
+    }
+    else if (scale >= 1.5f) {
+        candidates[0] = "neo-hub-hd.plist";
+        candidates[1] = "neo-hub-uhd.plist";
+        candidates[2] = "neo-hub.plist";
+    }
+    else {
+        candidates[0] = "neo-hub.plist";
+        candidates[1] = "neo-hub-hd.plist";
+        candidates[2] = "neo-hub-uhd.plist";
     }
 
+    auto resourceDir = Mod::get()->getResourcesDir();
+
+    for (const char* filename : candidates) {
+        auto plistPath = (
+            resourceDir / "neo-hub" / filename
+        ).string();
+
+        if (!fileUtils->isFileExist(plistPath))
+            continue;
+
+        CCSpriteFrameCache::get()->addSpriteFramesWithFile(
+            plistPath.c_str()
+        );
+
+        log::info("[NeoHub] Loaded atlas: {}", plistPath);
+
+        return true;
+    }
+
+    log::error(
+        "[NeoHub] No atlas found in mod resources: {}",
+        resourceDir.string()
+    );
+
+    return false;
+}
     // ------------------------------------------
     // INITIALIZATION
     // ------------------------------------------
