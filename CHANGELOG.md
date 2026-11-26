@@ -1,3 +1,9 @@
+# 1.1.3
+* Removed Interceptor (I don't remembered that)
+* Updated To Geode +v6.0.0 compatibility
+* Added [XblazeGMD](https://github.com/xblazegmd) ServerErrors API
+* Added Extra Page With Options Layers
+
 # 1.1.2
 * Update compatibility with geode v6.0.0-beta.3
 * Added Orbit Pool ScreenSaver Configurable 
