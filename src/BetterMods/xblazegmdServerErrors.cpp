@@ -1,0 +1,255 @@
+#include <Geode/Geode.hpp>
+#include <Geode/ui/Notification.hpp>
+
+#include <Geode/modify/GameLevelManager.hpp>
+#include <Geode/modify/CustomSongWidget.hpp>
+#include <Geode/modify/InfoLayer.hpp>
+#include <Geode/modify/ProfilePage.hpp>
+
+#include <string>
+
+#include <XblazeAPI.hpp>
+
+using namespace geode::prelude;
+
+/// A special popup that can only appear once at a time
+class ErrorPopup final : public FLAlertLayer, public FLAlertLayerProtocol {
+public:
+	static ErrorPopup* create(const char* title, std::string msg) {
+        if (s_instance) return nullptr;
+        auto ret = new ErrorPopup();
+        if (ret->init(ret, title, std::move(msg), "OK", nullptr, 350.f, false, 0.f, 1.f)) {
+            ret->autorelease();
+            s_instance = ret;
+            return ret;
+        }
+        delete ret;
+        return nullptr;
+	}
+
+	/// Safe way to make a popup and show it without risking crashes
+	static void createAndShow(const char* title, std::string msg) {
+		auto instance = ErrorPopup::create(title, std::move(msg));
+		if (instance) instance->show();
+	}
+private:
+	static inline ErrorPopup* s_instance = nullptr;
+
+	void FLAlert_Clicked(FLAlertLayer*, bool) override {
+		s_instance = nullptr;
+	}
+};
+
+// Internet check
+arc::Future<bool> internetCheckAsync() {
+	auto status = co_await xblazeapi::doWeHaveInternet();
+	if (!status) {
+		xblazeapi::quickNotificationTS("No internet connection!", NotificationIcon::Error);
+		co_return false;
+	}
+	co_return true;
+}
+
+void internetCheck() {
+	async::spawn(internetCheckAsync());
+}
+
+// Check if the servers are down
+void areTheServersDown() {
+	async::spawn(
+		internetCheckAsync(),
+		[](bool status) {
+			if (!status) return;
+
+            // Manually send request cuz xblazeapi::requestGDServers doesn't want to work bruh
+            auto req = web::WebRequest()
+                .userAgent("")
+                .bodyString(xblazeapi::bodyString({
+                    { "type", "1" },
+                    { "secret", xblazeapi::SECRET }
+                }))
+                .timeout(asp::Duration::fromSecs(10));
+
+			async::spawn(
+                req.post("https://neops.x10.mx/database/getGJLevels21.php"),
+			    [](web::WebResponse res) {
+                    if (!res.ok()) {
+			        	ErrorPopup::createAndShow(
+			        		"Error",
+			        		"The Geometry Dash servers are <cr>down</c> or <co>unreachable</c>"
+			        	);
+                        return;
+                    }
+
+                    if (res.string().isOk()) {
+                        auto num = utils::numFromString<int>(res.string().unwrap());
+                        if (num.isOk() && num.unwrap() < 0) {
+			            	ErrorPopup::createAndShow(
+			            		"Error",
+			            		"The Neo PS servers are <cr>down</c> or <co>unreachable</c>"
+			            	);
+                        }
+                    }
+			    }
+			);
+		}
+	);
+}
+
+// Most web requests use GameLevelManager so this is how we'll catch many of the errors
+class $modify(GLMHook, GameLevelManager) {
+	void onProcessHttpRequestCompleted(extension::CCHttpClient* client, extension::CCHttpResponse* response) {
+		GameLevelManager::onProcessHttpRequestCompleted(client, response);
+
+        int code = response->getResponseCode();
+		if (code >= 500 && code < 600) { // 5xx error
+			ErrorPopup::createAndShow(
+				"Error",
+				fmt::format("The Neo PS servers are <cr>down</c> due to an unexpected <co>server error</c> <cl>(status code: {})</c>", code)
+			);
+			return;
+		}
+
+		// Helpful code from BetterInfo (sry cvolton)
+		// (if you need me to remove this I'll figure out what to do)
+		auto data = response->getResponseData();
+		if ((data->size() > 11 && data->at(0) == 'e')) {
+			auto headerVector = response->getResponseHeader();
+			auto headers = std::string(headerVector->data(), headerVector->size());
+
+			for (const auto& header : string::split(headers, "\n")) {
+				if (header.size() < 14 || !header.starts_with("Retry-After")) continue;
+
+				// Rate limited
+				auto time = utils::numFromString<int>(header.substr(13)).unwrapOr(0);
+				ErrorPopup::createAndShow(
+					"Rate Limited",
+					fmt::format("You have been <co>rate limited</c> from the Neo PS.\nTry again in <cy>{}</c>", GameToolbox::getTimeString(time, false))
+				);
+				return;
+			}
+
+			// More helpful code from BetterInfo (sry again cvolton)
+			auto dat = std::string(data->data(), data->size());
+			if (dat.starts_with("error code:")) {
+				auto errCode = utils::numFromString<int>(dat.substr(12)).unwrapOr(0);
+				switch (errCode) {
+					case 1005:
+						// ISP Ban
+						ErrorPopup::createAndShow(
+							"ISP Ban",
+							"Your <cy>Internet Service Provider</c> (ISP) has been <cr>banned</c> from the Neo PS servers. If you are using a VPN, please disable it and try again <cl>(error code: 1005)</c>"
+						);
+						break;
+					case 1006:
+					case 1007:
+					case 1008:
+						// IP Ban
+						ErrorPopup::createAndShow(
+							"Banned",
+							"You have been <cr>IP banned</c> from the Geometry Dash servers. If you are using a VPN, please disable it and try again <cl>(error code: 1006)</c>"
+						);
+						break;
+					case 1015:
+						// Rate limit
+						ErrorPopup::createAndShow(
+							"Rate Limited",
+							"You have been <co>rate limited</c> from the Neo PS servers. Please try again later <cl>(error code: 1015)</c>"
+						);
+						break;
+					case 1020:
+						// Maintenance
+						ErrorPopup::createAndShow(
+							"Maintenance",
+							"The Neo PS servers are undergoing <co>maintenance</c>. Please try again later <cl>(error code: 10)</c>"
+						);
+						break;
+					default:
+						// Other random error
+						ErrorPopup::createAndShow(
+							"Error",
+							fmt::format("An unexpected server error occured <cl>(error code: {})</c>", errCode)
+						);
+						break;
+				}
+			}
+		}
+	}
+
+	// Commenting Issues
+	void onUploadCommentCompleted(std::string response, std::string tag) {
+        // Temporary ban format: "temp_{duration}_{reason}"
+		if (string::startsWith(response, "temp")) {
+			auto pieces = string::split(response, "_");
+
+			// Insecure password
+			if (pieces.size() > 2 && string::startsWith(pieces[2], "You cant comment because your password is insecure")) {
+				ErrorPopup::createAndShow(
+					"Unsafe Password",
+					"Your password is <co>too insecure</c>. Please change your password to reenable commenting"
+				);
+				return;
+			}
+
+			// There is no reason to modify the existing comment ban
+			// popup so we'll leave it as it is for now
+		}
+
+		GameLevelManager::onUploadCommentCompleted(response, tag);
+	}
+};
+
+// Newgrounds status
+class $modify(CSWHook, CustomSongWidget) {
+	void isNewgroundsDown(GJSongError type) {
+		if (type == GJSongError::FailedToFetch) {
+			async::spawn(
+				web::WebRequest()
+					.get("https://www.newgrounds.com/"),
+				[](web::WebResponse res) {
+					if (!res.ok()) {
+						ErrorPopup::createAndShow(
+							"Error",
+							fmt::format("The Newgrounds servers are <cr>down</c> or <co>unreachable</c>. Please try again later.\n<cl>(status code: {})</c>", res.code())
+						);
+					}
+				}
+			);
+		}
+	}
+
+	void loadSongInfoFailed(int id, GJSongError errorType) {
+		CustomSongWidget::loadSongInfoFailed(id, errorType);
+		isNewgroundsDown(errorType);
+	}
+
+	void downloadSongFailed(int id, GJSongError errorType) {
+		CustomSongWidget::downloadSongFailed(id, errorType);
+		isNewgroundsDown(errorType);
+	}
+};
+
+// Comment loading status
+class $modify(ILHook, InfoLayer) {
+	void loadCommentsFailed(const char* key) {
+		InfoLayer::loadCommentsFailed(key);
+		areTheServersDown();
+	}
+
+	void commentUploadFailed(int parentID, CommentError errorType) {
+		InfoLayer::commentUploadFailed(parentID, errorType);
+		if (errorType == CommentError::Failed) areTheServersDown();
+	}
+};
+
+class $modify(PPHook, ProfilePage) {
+    void loadCommentsFailed(const char* key) {
+        ProfilePage::loadCommentsFailed(key);
+        areTheServersDown();
+    }
+
+	void commentUploadFailed(int parentID, CommentError errorType) {
+		ProfilePage::commentUploadFailed(parentID, errorType);
+		if (errorType == CommentError::Failed) areTheServersDown();
+	}
+};
