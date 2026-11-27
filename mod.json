@@ -22,7 +22,7 @@
 	},
 		"resources": {
 		    "spritesheets": {
-      "neo-hubSheet01": [
+      "spritesSheet": [
         "resources/sprites/*.png",
         "resources/sprites/*.plist"
          ]
