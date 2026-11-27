@@ -21,12 +21,17 @@
 		"info": "If you see or detect an error or bug within the launcher or while playing, please report it to the GitHub issues page."
 	},
 		"resources": {
+		    "spritesheets": {
+      "neo-hubSheet01": [
+        "resources/sprites/*.png",
+        "resources/sprites/*.plist",
+         ]
+     },
 		"files": [
-			"resources/shaders/*.glsl",
-			"resources/sprites/*.png",
-			"resources/sprites/*.plist"
-		]
-	},
+		"resources/shaders/*.glsl"
+	]
+  },
+			
     "settings": {
 		"restart-title": {
             "type": "title",
