@@ -23,8 +23,8 @@
 		"resources": {
 		"files": [
 			"resources/shaders/*.glsl",
-			"resources/neo-hub/*.png",
-			"resources/neo-hub/*.plist"
+			"resources/sprites/*.png",
+			"resources/sprites/*.plist"
 		]
 	},
     "settings": {
@@ -97,9 +97,9 @@
             "name": "Speed",
             "description": "gravity multiplier",
             "type": "int",
-            "default": 1,
-            "min": 1,
-            "max": 15,
+            "default": 10,
+            "min": 10,
+            "max": 50,
             "control": {
                 "slider": true,
                 "arrows": true
