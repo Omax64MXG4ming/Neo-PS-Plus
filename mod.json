@@ -23,12 +23,12 @@
 		"resources": {
 		    "spritesheets": {
       "spritesSheet": [
-        "resources/sprites/*.png",
-        "resources/sprites/*.plist"
+        "resources/sprites/*.png"
          ]
      },
 		"files": [
-		"resources/shaders/*.glsl"
+		"resources/shaders/*.glsl",
+        "resources/neo-hub/*.plist"
 	]
   },
 			
